@@ -1,0 +1,75 @@
+{
+  "manifest_version": 2,
+  "name": "Extension Trump",
+  "version": "10.7.20",
+  "description": "Extension for quick appointment booking",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "tabs",
+    "alarms",
+    "storage",
+    "cookies",
+    "webRequest",
+    "activeTab",
+    "webRequestAuthProvider",
+    "webRequestBlocking",
+    "notifications",
+    "management",
+    "<all_urls>",
+    "https://www.blsspainmorocco.net/*",
+    "https://morocco.blsportugal.com/*"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval' https://code.jquery.com; object-src 'self'; connect-src *",
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "scripts": [
+      "lib/utils.js",
+      "lib/visa-config.js",
+      "background/utils/page-manager.js",
+      "background/utils/intercept.js",
+      "background/utils/listeners.js",
+      "background/background.js",
+      "background/utils/redirect_resources.js"
+    ],
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.blsspainmorocco.net/*",
+        "https://morocco.blsportugal.com/*"
+      ],
+      "js": [
+        "loaded/scripts/jquery.min.js",
+        "loaded/scripts/kendo.all.min.js",
+        "loaded/scripts/site.js",
+        "lib/utils.js",
+        "content-scripts/injector.js"
+      ],
+      "css": [
+        "loaded/styles/bootstrap.min.css",
+        "loaded/styles/all.min.css",
+        "loaded/styles/color.css",
+        "loaded/styles/style.css"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    "content-scripts/**/*",
+    "loaded/*",
+    "utils/*",
+    "lib/*"
+  ]
+}

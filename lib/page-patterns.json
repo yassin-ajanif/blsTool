@@ -1,0 +1,21 @@
+{
+  "patterns": {
+    "login": "\/account\/login",
+    "logincaptcha": "\/newcaptcha\/logincaptcha",
+    "appointmentcaptcha": "\/appointment\/(appointmentcaptcha|newappointment)",
+    "visatype": "\/appointment\/(appointmentcaptcha|visatype)",
+    "myappointments": "\/appointmentdata\/myappointments",
+    "applicantselection": "\/appointment\/applicantselection",
+    "slotselection": "\/appointment\/slotselection",
+    "payment": "\/appointment\/payment",
+    "liveness": "\/appointment\/liveness"
+  },
+  "scripts": {
+    "shared": [ "utils/shared/countdown", "utils/shared/RedirectOrRefresh", "utils/shared/Infos", "utils/shared/overlays"],
+    "logincaptcha": ["utils/captcha/captchasolver"],
+    "appointmentcaptcha": ["utils/captcha/captchasolver"],
+    "slotselection": ["utils/slotselection/emptyPageHandler"],
+    "applicantselection": ["utils/applicantselection/savephoto", "utils/applicantselection/ChangeApplicant", "utils/applicantselection/DisplayChangedApplicant"]
+  },
+  "iframe_shared": ["utils/shared/countdown"]
+}

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUMP - Options</title>
+    <link href="../loaded/webfonts/material-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="header-left">
+                <img src="../icons/icon16.png" alt="Extension Logo" class="logo">
+                <span id="version" class="version-text">v</span>
+            </div>
+            <div id="user-info" class="user-info">
+                <span id="username" class="username"></span>
+                <button id="logout-btn" class="btn-icon-arrow material-icons-outlined" title="Logout">logout</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <nav class="sidebar">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-section="clients">
+                        <span class="nav-icon material-icons-outlined">group</span>
+                        <span class="nav-text">Clients</span>
+                    </li>
+                    <li class="nav-item" data-section="applicants">
+                        <span class="nav-icon material-icons-outlined">assignment</span>
+                        <span class="nav-text">Applicants</span>
+                    </li>
+                    <li class="nav-item" data-section="settings">
+                        <span class="nav-icon material-icons-outlined">tune</span>
+                        <span class="nav-text">Settings</span>
+                    </li>
+                </ul>
+            </nav>
+
+            <main>
+                <!-- Clients Section -->
+                <section id="clients-section" class="content-section active">
+                    <div class="section-header compact-header">
+                        <div class="items-count-badge"><strong id="clients-count">0</strong></div>
+                        <button id="add-client-btn" class="btn-primary">Add</button>
+                        <select id="client-filter" class="filter-compact">
+                            <option value="all">City</option>
+                        </select>
+                        <button id="country-filter-btn" class="btn-icon-arrow material-icons-outlined" title="Filter by country">public</button>
+                        <button id="import-clients-btn" class="btn-icon-arrow material-icons-outlined" title="Import">arrow_downward</button>
+                        <button id="export-clients-btn" class="btn-icon-arrow material-icons-outlined" title="Export">arrow_upward</button>
+                    </div>
+
+                    <div class="content-container">
+                        <div id="clients-container" class="data-container items-list">
+                            <div class="loading">Loading clients...</div>
+                        </div>
+
+                        <div id="client-form-container" class="form-container hidden">
+                            <h3 id="client-form-title">Add New Client</h3>
+
+                            <form id="client-form">
+                                <input type="hidden" id="client-id">
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-country">Country <span class="required">*</span></label>
+                                        <select id="client-country" required>
+                                            <option value="">-- Select Country --</option>
+                                            <option value="Spain">Spain</option>
+                                            <option value="Portugal">Portugal</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Photo uploads in one row -->
+                                <div class="form-row photo-uploads-row">
+                                    <!-- Main Photo -->
+                                    <div class="form-group photo-upload-group">
+                                        <label for="client-photo">Profile Photo</label>
+                                        <input type="file" id="client-photo" accept="image/*">
+                                        <div id="photo-preview" class="photo-preview main-photo-preview">
+                                            <div class="photo-placeholder">
+                                                <!-- Placeholder image will be set by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-name">Name <span class="required">*</span></label>
+                                        <input type="text" id="client-name" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="client-email">Email <span class="required">*</span></label>
+                                        <input type="email" id="client-email" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-password">BLS Password <span class="required">*</span></label>
+                                        <input type="text" id="client-password" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="client-app-password">App Password</label>
+                                        <input type="text" id="client-app-password">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-applicants-count">Applicants' Count <span
+                                                class="required">*</span></label>
+                                        <input type="number" id="client-applicants-count" min="1" max="6" value="1"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-category">Category <span class="required">*</span></label>
+                                        <select id="client-category" required>
+                                            <option value="">-- Select Category --</option>
+                                            <option value="Normal">Normal</option>
+                                            <option value="Premium">Premium</option>
+                                            <option value="Prime Time">Prime Time</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="client-location">Location <span class="required">*</span></label>
+                                        <select id="client-location" required>
+                                            <option value="">-- Select Location --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="client-visa-type">Visa Type <span class="required">*</span></label>
+                                        <select id="client-visa-type" required>
+                                            <option value="">-- Select Visa Type --</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="client-visa-subtype">Visa Subtype <span
+                                                class="required">*</span></label>
+                                        <select id="client-visa-subtype">
+                                            <option value="">-- Select Visa Subtype --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Save</button>
+                                    <button type="button" id="cancel-client-btn" class="btn-secondary">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Applicants Section -->
+                <section id="applicants-section" class="content-section">
+                    <div class="section-header compact-header">
+                        <div class="items-count-badge"><strong id="applicants-count">0</strong></div>
+                        <select id="applicant-filter" class="filter-compact">
+                            <option value="all">All</option>
+                        </select>
+                        <button id="import-applicants-btn" class="btn-icon-arrow material-icons-outlined" title="Import">arrow_downward</button>
+                        <button id="export-applicants-btn" class="btn-icon-arrow material-icons-outlined" title="Export">arrow_upward</button>
+                    </div>
+
+                    <div class="content-container">
+                        <div id="applicants-container" class="data-container items-list">
+                            <div class="loading">Loading applicants...</div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Dates Section -->
+                <section id="dates-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Appointment Settings</h2>
+                    </div>
+
+
+                    <!-- Replacement content -->
+                    <div class="content-container">
+                        <div id="appointment-settings-tab" class="under-development">
+                            <h3>Appointment Settings</h3>
+                            <p class="development-main">Under Development</p>
+                            <p class="development-sub">This feature is currently being developed and will be available soon.</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Pages Section -->
+                <section id="pages-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Page Codes Management</h2>
+                        <div class="section-actions">
+                            <button id="add-page-code-btn" class="btn-primary">Add New Code</button>
+                            <button id="import-codes-btn" class="btn-secondary">Import</button>
+                            <button id="export-codes-btn" class="btn-secondary">Export</button>
+                        </div>
+                    </div>
+
+                    <div class="content-container">
+                        <div class="search-filter">
+                            <input type="text" id="page-code-search" placeholder="Search page codes...">
+                            <select id="page-code-filter">
+                                <option value="all">All Codes</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="autorun">Auto-Run</option>
+                            </select>
+                        </div>
+
+                        <div id="page-codes-container" class="data-container">
+                            <div class="loading">Loading page codes...</div>
+                        </div>
+
+                        <div id="page-code-form-container" class="form-container hidden">
+                            <h3 id="page-code-form-title">Add New Page Code</h3>
+
+                            <form id="page-code-form">
+                                <input type="hidden" id="page-code-id">
+
+                                <div class="form-group">
+                                    <label for="page-code-name">Name <span class="required">*</span></label>
+                                    <input type="text" id="page-code-name" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="page-code-description">Description</label>
+                                    <textarea id="page-code-description" rows="2"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="page-code-url-pattern">URL Pattern</label>
+                                    <input type="text" id="page-code-url-pattern">
+                                    <small>Regular expression or string to match URLs</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="page-code-code">JavaScript Code <span class="required">*</span></label>
+                                    <textarea id="page-code-code" rows="12" required></textarea>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <label for="page-code-active">
+                                        <input type="checkbox" id="page-code-active" checked>
+                                        Active
+                                    </label>
+                                </div>
+
+                                <div class="form-group checkbox-group">
+                                    <label for="page-code-autorun">
+                                        <input type="checkbox" id="page-code-autorun">
+                                        Auto-Run on matching URLs
+                                    </label>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Save</button>
+                                    <button type="button" id="generate-code-btn" class="btn-secondary">Generate
+                                        Code</button>
+                                    <button type="button" id="cancel-page-code-btn"
+                                        class="btn-secondary">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div id="code-generator-container" class="form-container hidden">
+                            <h3>Code Generator</h3>
+
+                            <div class="form-group">
+                                <label for="code-generator-type">Action Type</label>
+                                <select id="code-generator-type">
+                                    <option value="fillForm">Fill Form</option>
+                                    <option value="clickButton">Click Button</option>
+                                    <option value="extractData">Extract Data</option>
+                                    <option value="navigateTo">Navigate to URL</option>
+                                    <option value="waitFor">Wait for Element</option>
+                                </select>
+                            </div>
+
+                            <div id="generator-options"></div>
+
+                            <div class="form-group">
+                                <label for="generated-code">Generated Code</label>
+                                <textarea id="generated-code" rows="6" readonly></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" id="insert-code-btn" class="btn-primary">Insert Code</button>
+                                <button type="button" id="cancel-generator-btn" class="btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section id="settings-section" class="content-section">
+                    <div class="content-container">
+                        <form id="settings-form">
+
+                            <!-- Page Settings with Ultra Compact Table Style -->
+
+                            <div class="settings-table-container">
+                                <!-- Redirection Settings Table -->
+                                <div class="settings-table">
+                                    <div class="settings-table-header">REDIRECTION/REFRESH</div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="page-redirect" checked disabled style="opacity: 1;">
+                                        <label for="page-redirect">Page Redirect</label>
+                                        <input type="number" id="page-redirect-ms" placeholder="500" min="0" value="500">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="refresh-error" checked>
+                                        <label for="refresh-error">Refresh Error</label>
+                                        <input type="number" id="refresh-error-ms" placeholder="1000" min="0" value="1000">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                </div>
+
+                                <!-- Auto-Submit Pages Table -->
+                                <div class="settings-table">
+                                    <div class="settings-table-header">AUTO-SUBMIT</div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-login-page">
+                                        <label for="submit-login-page">Login</label>
+                                        <input type="number" id="submit-login-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-login-captcha-page">
+                                        <label for="submit-login-captcha-page">Login Captcha</label>
+                                        <input type="number" id="submit-login-captcha-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-appointment-captcha-page">
+                                        <label for="submit-appointment-captcha-page">Appointment Captcha</label>
+                                        <input type="number" id="submit-appointment-captcha-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-visa-type-page">
+                                        <label for="submit-visa-type-page">Visa Type</label>
+                                        <input type="number" id="submit-visa-type-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-slot-selection-page">
+                                        <label for="submit-slot-selection-page">Slot Selection</label>
+                                        <input type="number" id="submit-slot-selection-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-liveness-page">
+                                        <label for="submit-liveness-page">Liveness</label>
+                                        <input type="number" id="submit-liveness-page-ms" value="0" disabled style="opacity: 0.6;">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                    <div class="settings-table-row">
+                                        <input type="checkbox" id="submit-payment-page">
+                                        <label for="submit-payment-page">Payment</label>
+                                        <input type="number" id="submit-payment-page-ms" placeholder="0" min="0">
+                                        <span class="ms-label">ms</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Captcha Service -->
+                            <div class="settings-group">
+                                <div class="form-group">
+                                    <label for="captcha-service">Active Captcha Service</label>
+                                    <select id="captcha-service">
+                                        <option value="nocaptchaai">NoCaptchaAI</option>
+                                        <option value="truecaptcha">TrueCaptcha</option>
+                                        <option value="servercaptcha">Server-Captcha</option>
+                                    </select>
+                                </div>
+                                <div id="nocaptchaai-settings" class="captcha-service-settings hidden">
+                                    <div class="form-group">
+                                        <input type="text" id="nocaptchaai-api-key">
+                                    </div>
+                                </div>
+                                <!-- TrueCaptcha Settings -->
+                                <div id="truecaptcha-settings" class="captcha-service-settings hidden">
+                                    <div class="form-group">
+                                        <label for="truecaptcha-user-id">User ID</label>
+                                        <input type="text" id="truecaptcha-user-id"
+                                            placeholder="Enter your TrueCaptcha User ID">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="truecaptcha-api-key">API Key</label>
+                                        <input type="text" id="truecaptcha-api-key"
+                                            placeholder="Enter your TrueCaptcha API key">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Save Settings</button>
+                                <button type="button" id="clear-data-btn" class="btn-danger">Clear All Data</button>
+                            </div>
+                        </form>
+
+
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <footer>
+            <div id="status-message"></div>
+        </footer>
+    </div>
+
+    <template id="client-item-template">
+        <div class="data-item client-item client-card" data-id="">
+            <div class="client-card-photo">
+                <div class="client-photo"></div>
+            </div>
+            <div class="client-card-content">
+                <div class="client-card-header">
+                    <h3 class="client-name-with-count">
+                        <span class="client-name"></span>
+                        <span class="applicants-badge">[<span class="client-applicants-count"></span>]</span>
+                        <span class="client-country-flag"></span>
+                    </h3>
+                </div>
+                <div class="client-card-details">
+                    <div class="client-detail-text client-email"></div>
+                    <div class="client-detail-text client-location"></div>
+                    <div class="client-detail-text client-category"></div>
+                    <div class="client-detail-text client-visa-subtype"></div>
+                </div>
+                <div class="item-actions">
+                    <button class="btn-icon clone-client material-icons-outlined" title="Clone">content_copy</button>
+                    <button class="btn-icon edit-client material-icons-outlined" title="Edit">create</button>
+                    <button class="btn-icon delete-client material-icons-outlined" title="Delete">close</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="page-code-item-template">
+        <div class="data-item page-code-item" data-id="">
+            <div class="item-header">
+                <h3 class="code-name"></h3>
+                <div class="status-indicator"></div>
+            </div>
+            <div class="item-details">
+                <div class="detail-row">
+                    <span class="detail-label">Description:</span>
+                    <span class="code-description"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">URL Pattern:</span>
+                    <span class="code-url-pattern"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Auto-Run:</span>
+                    <span class="code-autorun"></span>
+                </div>
+                <div class="detail-row code-preview-row">
+                    <span class="detail-label">Code Preview:</span>
+                    <pre class="code-preview"></pre>
+                </div>
+            </div>
+
+            <div class="item-actions">
+                <button class="btn-icon clone-client material-icons-outlined" title="Clone">content_copy</button>
+                <button class="btn-icon edit-client material-icons-outlined" title="Edit">create</button>
+                <button class="btn-icon delete-client material-icons-outlined" title="Delete">close</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="holiday-item-template">
+        <div class="data-item holiday-item" data-date="">
+            <div class="item-details">
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="holiday-date"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="holiday-name"></span>
+                </div>
+            </div>
+            <div class="item-actions">
+                <button class="btn-icon delete-holiday material-icons-outlined" title="Delete">close</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Load Scripts -->
+    <script src="../lib/utils.js"></script>
+    <script src="../lib/visa-config.js"></script>
+    <script src="../lib/unified-client.js"></script>
+    <script src="options.js"></script>
+</body>
+
+</html>

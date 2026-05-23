@@ -1,0 +1,130 @@
+name: Deploy Extension to S3
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:  # Allows manual triggering for testing
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        # Remove 'v' prefix if present
+        VERSION="${VERSION#v}"
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Update versions.json
+      run: |
+        echo "📝 Updating versions.json with version ${{ steps.get_version.outputs.VERSION }}..."
+
+        # Download existing versions.json from S3 or create new
+        if aws s3 cp s3://trump-extension/versions/versions.json ./versions.json 2>/dev/null; then
+          echo "Found existing versions.json"
+        else
+          echo "Creating new versions.json"
+          echo "[]" > versions.json
+        fi
+
+        # Create Python script to update versions.json
+        cat > update_versions.py << 'EOF'
+        import json
+        import sys
+        import os
+
+        version = os.environ.get('VERSION', '')
+        if not version:
+            print("Error: VERSION not provided")
+            sys.exit(1)
+
+        try:
+            with open('versions.json', 'r') as f:
+                versions = json.load(f)
+        except:
+            versions = []
+
+        # Add new version at the beginning if not already present
+        if version not in versions:
+            versions.insert(0, version)
+
+        # Keep only last 20 versions
+        versions = versions[:20]
+
+        with open('versions.json', 'w') as f:
+            json.dump(versions, f, indent=2)
+
+        print(f'Updated versions.json with {version}')
+        print(f'Total versions: {len(versions)}')
+        EOF
+
+        # Run the Python script
+        VERSION="${{ steps.get_version.outputs.VERSION }}" python3 update_versions.py
+
+        # Upload updated versions.json to S3
+        aws s3 cp versions.json s3://trump-extension/versions/versions.json
+        echo "✅ versions.json updated successfully!"
+
+    - name: Deploy extension files to S3
+      run: |
+        echo "📦 Deploying Trump Extension version ${{ steps.get_version.outputs.VERSION }} to S3..."
+
+        # Deploy to versioned folder only (removed latest folder sync)
+        aws s3 sync . s3://trump-extension/source/${{ steps.get_version.outputs.VERSION }}/ \
+          --delete \
+          --exclude ".git/*" \
+          --exclude ".github/*" \
+          --exclude "node_modules/*" \
+          --exclude ".gitignore" \
+          --exclude "README.md" \
+          --exclude "*.md" \
+          --exclude ".DS_Store" \
+          --exclude "package-lock.json" \
+          --exclude "yarn.lock" \
+          --exclude "versions.json"
+
+        echo "✅ Extension deployed successfully!"
+
+    - name: Deploy tokens folder (if exists)
+      run: |
+        if [ -d "./tokens" ]; then
+          echo "📤 Deploying tokens to public folder..."
+          aws s3 sync ./tokens s3://trump-extension/tokens/ --delete
+          echo "✅ Tokens deployed!"
+        else
+          echo "ℹ️ No tokens folder found, skipping..."
+        fi
+
+    - name: Create deployment summary
+      run: |
+        echo "### 🚀 Trump Extension Deployed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version:** ${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** AyoubTrump/Trump_v0" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📁 S3 Locations:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Versioned:** \`s3://trump-extension/source/${{ steps.get_version.outputs.VERSION }}/\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Versions list:** \`s3://trump-extension/versions/versions.json\`" >> $GITHUB_STEP_SUMMARY
