@@ -1,0 +1,1913 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Morocco BLS Spain Visa: Welcome to the Official Website Spain Visa Application Centre in Morocco</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Morocco BLS Spain Visa">
+    <meta name="robots" content="noindex, noarchive, nofollow">
+
+    <script>
+
+        const storedTheme = localStorage.getItem('theme')
+
+        const getPreferredTheme = () => {
+            if (storedTheme) {
+                return storedTheme
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+
+        const setTheme = function (theme) {
+            if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark')
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', theme)
+            }
+        }
+
+        setTheme(getPreferredTheme())
+
+        window.addEventListener('DOMContentLoaded', () => {
+            var el = document.querySelector('.theme-icon-active');
+            if (el != 'undefined' && el != null) {
+                const showActiveTheme = theme => {
+                    const activeThemeIcon = document.querySelector('.theme-icon-active use')
+                    const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+                    const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+                    document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+                        element.classList.remove('active')
+                    })
+
+                    btnToActive.classList.add('active')
+                    activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+                }
+
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                    if (storedTheme !== 'light' || storedTheme !== 'dark') {
+                        setTheme(getPreferredTheme())
+                    }
+                })
+
+                showActiveTheme(getPreferredTheme())
+
+                document.querySelectorAll('[data-bs-theme-value]')
+                    .forEach(toggle => {
+                        toggle.addEventListener('click', () => {
+                            const theme = toggle.getAttribute('data-bs-theme-value')
+                            localStorage.setItem('theme', theme)
+                            setTheme(theme)
+                            showActiveTheme(theme)
+                        })
+                    })
+
+            }
+        })
+
+    </script>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/font-awesome/css/all.min.css?v=AbA177XfpSnFEvgpYu1jMygiLabzPCJCRIBtR5jGc0k">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/bootstrap-icons/bootstrap-icons.css?v=4RctOgogjPAdwGbwq-rxfwAmSpZhWaafcZR9btzUk18">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/tiny-slider/tiny-slider.css?v=1CXVlacnwYLmg9X2AhCKvYcSgR53GWiU3z4qZJDrb68">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/glightbox/css/glightbox.css?v=yMoCTayb6wccTz561YN_R0qkP756JifYXnA40MUtR-k">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/flatpickr/css/flatpickr.min.css?v=RXPAyxHVyMLxb0TYCM2OW5R4GWkcDe02jdYgyZp41OU">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/choices/css/choices.min.css?v=IhTRSpOAAOl37YqrDOlNjxD6S4lzZ_n2WqKtc03i0mE">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/bootstrap/dist/css/bootstrap.min.css?v=YLGeXaapI0_5IgZopewRJcFXomhRMlYYjugPLSyNjTY">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=de-9WIa9z8cZXAVKAywSh1vOyouay5jH6hy6oE4R0xc">
+
+    <link rel="stylesheet" type="text/css" href="/assets/css/color.css?v=biNDUrJj74VlRbGB7tvoVV8aOPeiVsRt7L_VDdhggXQ" />
+
+    <link rel="stylesheet" type="text/css" href="/css/site.css?v=nyttlx8tVS_Y-Y8W6R_0h9a60aa5OepPeqVafkXiVDg" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/kendo/css/kendo.common.min.css">
+    <link rel="stylesheet" type="text/css" href="/assets/vendor/kendo/css/kendo.silver.min.css">
+
+    <style>
+    </style>
+    <script src="/assets/js/client.min.js"></script>
+    <script src="/assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/assets/vendor/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="/assets/vendor/jquery-ajax-unobtrusive/jquery-ajax-unobtrusive.js"></script>
+    <script src="/assets/vendor/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $.ajaxSetup({
+            beforeSend: function (xhr, options) {
+                if (options.type.toUpperCase() == "POST") {
+                    xhr.setRequestHeader("RequestVerificationToken", $('input:hidden[name="__RequestVerificationToken"]').val());
+                }
+
+            }
+        });
+        $(document).ready(function () {
+            try {
+                const client = new ClientJS();
+                const visitorId = client.getFingerprint();
+
+                // Set the cookie
+                document.cookie = "visitorId_current=" + visitorId + "; path=/; SameSite=Strict";
+
+                // Debug: print visitor ID and cookie value
+                console.log("Generated Visitor ID:", visitorId);
+
+                // Read cookie back
+                const match = document.cookie.match(/(?:^|;\s*)visitorId_current=([^;]*)/);
+                if (match) {
+                    console.log("Visitor ID from cookie:", match[1]);
+                } else {
+                    console.warn("Visitor ID cookie not found!");
+                }
+            } catch (err) {
+                console.error("Visitor ID generation failed:", err);
+            }
+        });
+    </script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div class="preloader">
+        <div class="preloader-item">
+            <div class="spinner-grow text-primary"></div>
+        </div>
+    </div>
+    <div id="global-overlay" class="global-overlay">
+        <div class="global-overlay-loader">
+        </div>
+    </div>
+    <header class="navbar-light header-sticky">
+        <!-- Nav START -->
+        <nav class="navbar navbar-expand-xl z-index-9 navbar-divider">
+            <div class="container">
+                <!-- Logo START -->
+                <a class="navbar-brand" href="/MAR/account/login/">
+                    <img class="light-mode-item navbar-brand-item" src="/assets/images/logo.svg" alt="BLS Logo" title="BLS Logo">
+                    <img class="dark-mode-item navbar-brand-item" src="/assets/images/logo.svg" alt="logo">
+                </a>
+                <!-- Logo END -->
+                <!-- Responsive navbar toggler -->
+                <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="bi bi-search fs-4"> </i>
+                </button>
+
+                <!-- Responsive navbar toggler -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse2" aria-controls="navbarCollapse2" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-animation">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                </button>
+
+                <!-- Main navbar START -->
+                <div class="navbar-collapse collapse" id="navbarCollapse">
+                    <div class="col-md-9">
+                        <div class="nav my-3 my-xl-0 px-4 flex-nowrap align-items-center">
+                            <div class="nav-item w-100">
+                                <div class="align-items-center position-relative">
+                                    <div class="align-items-center text-primary" style="font-size:30px;font-weight:700;">Apply for VISA to Spain In Morocco</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="align-items-center position-relative">
+                            <small class="text-secondary mb-1">Follow us on</small>
+                            <ul class="list-inline mb-3 mt-0">
+                                <li class="list-inline-item"> <a class="btn btn-sm px-2 bg-facebook mb-0" href="/MAR/home/sm?name=F"   target="_blank" rel="noopener noreferrer"rel="noopener noreferrer"rel="noopener noreferrer"><i class="fab fa-fw fa-facebook-f"></i></a> </li>
+                                <li class="list-inline-item"> <a class="btn btn-sm shadow px-2 bg-instagram mb-0" href="/MAR/home/sm?name=I"   target="_blank" rel="noopener noreferrer"rel="noopener noreferrer"rel="noopener noreferrer"><i class="fab fa-fw fa-instagram"></i></a> </li>
+                                <li class="list-inline-item">
+                                    <a class="btn btn-sm shadow px-2 bg-twitter mb-0"
+                                       href="/MAR/home/sm?name=X" target="_blank"> <span style="font-size:14px; font-weight:900; display:inline-block; width:1.25em; text-align:center; line-height:1;">𝕏</span>
+                                    </a>
+                                </li>                                
+                                <li class="list-inline-item"> <a class="btn btn-sm shadow px-2 bg-linkedin mb-0" href="/MAR/home/sm?name=L" target="_blank" rel="noopener noreferrer"rel="noopener noreferrer"rel="noopener noreferrer"><i class="fab fa-fw fa-linkedin-in"></i></a> </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main navbar END -->
+                <!-- Profile and notification START -->
+                <ul class="nav flex-row align-items-center list-unstyled ms-xl-auto">
+                    <li class="dropdown nav-item">
+                        <a class="nav-link small pb-2" href="#" role="button" id="languageDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <img class="w-30px me-2" src="/assets/images/flags/en-US.svg" alt=""><small>English</small>
+                        </a>
+                        <ul class="dropdown-menu dropdown-animation dropdown-menu-end min-w-auto" aria-labelledby="languageDropdown">
+                            <li> <a class="dropdown-item me-4" href="javascript:OnLanguageChange('en-US');"><img class="fa-fw me-2" src="/assets/images/flags/en-US.svg" alt="">English</a> </li>
+                            <li> <a class="dropdown-item me-4" href="javascript:OnLanguageChange('es-ES');"><img class="fa-fw me-2" src="/assets/images/flags/es-ES.svg" alt="">Español</a> </li>
+                            <li> <a class="dropdown-item me-4" href="javascript:OnLanguageChange('fr-FR');"><img class="fa-fw me-2" src="/assets/images/flags/fr-FR.svg" alt="">Français</a> </li>
+                        </ul>
+                    </li>
+                        <li class="nav-item ms-3 dropdown">
+                            <!-- Avatar -->
+                            <a class="avatar avatar-sm p-0 mt-0" href="#" id="profileDropdown" role="button" data-bs-auto-close="outside" data-bs-display="static" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <img onerror="OnPhotoError(this);" class="avatar-img rounded-2" src="/assets/images/avatar/01.jpg" alt="Profile">
+                            </a>
+
+                            <!-- Profile dropdown START -->
+                            <ul class="dropdown-menu dropdown-animation dropdown-menu-end shadow pt-3" aria-labelledby="profileDropdown">
+                                <!-- Profile info -->
+                                <li class="px-3 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Avatar -->
+                                        <div class="avatar me-3">
+                                                <img onerror="OnPhotoError(this);" class="avatar-img rounded-circle shadow" src="/assets/images/avatar/01.jpg" alt="Profile">
+
+                                        </div>
+                                        <div>
+                                            <a class="h6 mt-2 mt-sm-0" href="#">YASSIN AJANIF</a>
+                                            <p class="small m-0">yassin.ajanif@gmail.com</p>
+                                        </div>
+                                    </div>
+                                </li>
+
+                                <!-- Links -->
+                                <li> <hr class="dropdown-divider"></li>
+                                <li></li>
+                                <li><a class="dropdown-item" href="/MAR/account/DeleteUser"><i class="fa fa-trash fa-fw me-2"></i>Delete Account</a></li>
+                                <li><a class="dropdown-item" href="/MAR/account/ChangePassword"><i class="fa fa-key fa-fw me-2"></i>Change Password</a></li>
+                                <li><a class="dropdown-item bg-danger-soft-hover" href="javascript:OnLogout();"><i class="fa fa-power-off me-2"></i>Logout</a></li>
+                                <li> <hr class="dropdown-divider"></li>
+
+                                <!-- Dark mode options START -->
+                                <!-- Dark mode options END-->
+                            </ul>
+                            <!-- Profile dropdown END -->
+                        </li>
+                    <!-- Profile dropdown START -->
+                    <!-- Profile dropdown END -->
+                </ul>
+                <!-- Profile and notification END -->
+            </div>
+        </nav>
+        <!-- Nav END -->
+        <!--Main menu link START -->
+        <nav class="navbar navbar-expand-xl navbar-divider">
+            <div class="container px-0">
+                <!-- Main navbar START -->
+                <div class="navbar-collapse w-100 collapse" id="navbarCollapse2">
+                    <ul class="navbar-nav nav-active-line navbar-nav-scroll">
+                        <li class="nav-item"> <a class="nav-link home-active" href="/MAR/account/login/"><i class="fa fa-home"></i></a>	</li>
+
+                        <!-- Nav item -->
+                        <li class="nav-item"> <a class="nav-link new-app-active" href="/MAR/appointment/newappointment/">Book New Appointment</a>	</li>
+
+                        <!-- Nav item -->
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle my-app-active" href="#" id="pageMenu" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Manage Appointments</a>
+                            <ul class="dropdown-menu" aria-labelledby="pageMenu">
+
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="text-danger fa-regular fa-calendar-xmark me-2"></i>Cancel Appointment
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="text-info fa-solid fa-print me-2"></i>Re-Print Appointment Letter
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="text-info fa-solid fa-users me-2"></i>Manage Applicants
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+
+
+                    <li class="nav-item"><a class="nav-link doorstep-active text-primary fw-bolder" href="https://bls.schengen.europ-assistance.com/en?ipc=blsmorocco&utm_source=blsmorocco&utm_medium=affiliates" target="_blank">Travel Insurance</a></li>
+                    
+</ul>
+
+                </div>
+                <!-- Main navbar END -->
+            </div>
+        </nav>
+        <!--Main menu link END -->
+    </header>
+    <!-- **************** MAIN CONTENT START **************** -->
+    <main>
+        
+<style>
+    .validation-summary ul {
+        list-style-type: none;
+    }
+</style> 
+<div class="row">
+    <div class="col-12 row p-4 justify-content-center">
+        <div class="col-12 justify-content-center text-center pb-2">
+            <h5>Book New Appointment - Visa Type Selection</h5>
+        </div>
+    </div>
+    <div class="col-12">
+        
+
+    <style>
+.bls-card{
+    border:1px solid gray;
+}
+.form-check-input {
+    margin-top: 0.2em !important;
+    margin-left: 0px !important;
+    margin-right: 5px !important;
+}
+.zpexnpuwj{z-index:1;}.tfpsnznd{z-index:1;}.vvsbqcdt{z-index:1;}.ydadjic{z-index:1;}.kvnye{z-index:1;}.zbvcn{z-index:1;}.efulir{display:none !important;z-index:1;}.zuksbwl{display:none !important;z-index:1;}.almupe{display:none !important;z-index:1;}.xbyixbw{display:none !important;z-index:1;}.vtyywaqu{display:none !important;z-index:1;}.pltkfjixu{display:none !important;z-index:1;}.chitzes{display:block !important;z-index:1;}.ozzswmxh{display:block !important;z-index:1;}.lrfaftt{display:block !important;z-index:1;}.mppmco{display:block !important;z-index:1;}.ispaaemur{display:block !important;z-index:1;}.hlxvjct{display:block !important;z-index:1;}.uzsbcswpo{display:block !important;z-index:1;}.bxrqdwqyi{display:block !important;z-index:1;}.tnkwqo{display:block !important;z-index:1;}.ncorjpao{display:block !important;z-index:1;}.bfeewca{display:block !important;z-index:1;}.rajgffl{display:block !important;z-index:1;}.trfmtyxhi{display:block !important;z-index:1;}.kfrwppby{display:block !important;z-index:1;}.sfblbwfw{display:block !important;z-index:1;}.rgcetuop{display:block !important;}.tcfgsntq{display:block !important;}.ygjjdj{display:block !important;}.oiggime{display:block !important;}.hudxwbm{display:block !important;}.jcohmjl{display:block !important;}.irlfm{display:block !important;}.uxoyxmqea{display:block !important;}.vuexcf{display:block !important;}.zhpiirb{display:block !important;}.cvmieiebo{display:block !important;}.yjsfwuii{display:block !important;}.dlyoan{display:block !important;}.rdvob{display:none !important;}.uvxii{display:none !important;}.njyzqsmml{display:none !important;}.kcmtmjilx{display:none !important;}.nffjrtjiq{display:none !important;}.vdsew{display:none !important;}.xmsergqn{display:none !important;}.bzqtal{display:none !important;}.xobojjfuq{display:none !important;}.kirccz{display:none !important;}.gehsjv{display:none !important;}.vuanetnvu{display:none !important;}.kbtpvdv{display:none !important;}.tcaxeimq{display:none !important;}.fujdr{display:none !important;}.myqre{display:none !important;}.kxjqkqpto{display:none !important;}.ifqcqy{display:none !important;}.qfrlcnnd{display:none !important;}.vwvqsor{display:none !important;}.rajansmi{display:none !important;}.eoqmcny{display:none !important;}.fxfjpwxpv{display:none !important;}.xdhjexv{display:block !important;}.vhftiwf{display:block !important;}.ligcjr{display:block !important;}.pynpjbyis{display:block !important;}.iuxtmevgt{display:block !important;}.lgnqq{display:block !important;}.njpveneki{display:block !important;}.brkkurpe{display:block !important;}.xpryof{display:block !important;}.wxoiz{display:block !important;}.vnnmfewr{display:block !important;}.snuxnoebv{display:block !important;}.vjwqgjaj{display:block !important;}.tgdtmf{display:none !important;}.fclakmsti{display:none !important;}.gmqvxh{display:none !important;}.txlgskiq{display:none !important;}.zsbmsko{display:none !important;}.zvjzu{display:none !important;}.gxoswrv{display:none !important;}.dyolhogsj{display:none !important;}.ehmiux{display:none !important;}.mbayh{display:none !important;}.pnmna{display:none !important;}.gkbvz{display:none !important;}.szibc{display:none !important;}
+</style>
+<script>
+     
+    var applicantId = 0;
+    var catItem = null;
+    var locationDataItem = null;
+    var familyModalClose = false;
+    function onDrpOpen(e) {
+        var id = e.sender.element[0].id;
+        var item = rspData.find(x => x.Id === id);
+        rspData = RemoveItem(id);
+        if (item !== null && item !== undefined) {
+            item.Start = new Date($.now());
+            item.Selected = false;
+        }
+        else {
+            item = { Id: id, Start: new Date($.now()), End: null, Total: null, Selected: false };
+        }
+        rspData.push(item);
+    }
+    function onselect1(id) {
+        $('.bls-applicant').removeClass('alert-primary');
+        $('.bls-applicant').addClass('alert-light');
+        $("#app-"+id).removeClass('alert-light');
+        $("#app-"+id).addClass('alert-primary');
+        $("input[name='Applicant']").prop('checked', false);
+        $("#rdo-" + id).prop('checked', true);
+    }
+     function onDrpSelect(e) {
+         var id = e.sender.element[0].id;
+         var item = rspData.find(x => x.Id === id);
+         rspData = RemoveItem(id);
+         if (item !== null && item !== undefined) {
+             item.Selected = true;
+             rspData.push(item);
+         }
+     };
+     function RemoveItem(id) {
+             return rspData.filter(function (e) {
+                 return e.Id !== id;
+             });
+     }
+     function onDrpClose(e) {
+         var id = e.sender.element[0].id;
+         var item = rspData.find(x => x.Id === id);
+         rspData = RemoveItem(id);
+         if (item !== null && item !== undefined) {
+             if (item.Selected) {
+                 item.End = new Date($.now());
+                 item.Total = item.End - item.Start;
+                 item.Selected = true;
+             }
+             rspData.push(item);
+         }
+     }
+  function OnSubmitVisaType() {
+        window.location.href = "/MAR/appointment/slotselection/";
+        return false;
+    }
+    function OnAppointmentForChange(e, id) {
+        applicantId = id;
+        $("#members"+id).hide();
+        $("#an"+id).data("kendoDropDownList").value("");
+        $("#an"+id).data("kendoDropDownList").value(null);
+        if (e !== null && e.target.id == "family" + id) {
+        $("#members" + id).show();
+        $('#AppointmentFor').val('Family');
+         $('#familyDisclaimer').modal('show');
+        }
+        else { 
+            $('#AppointmentFor').val('Individual');
+        }
+    }
+    function OnFamilyReject(){
+        var appointmentFor = document.getElementById("self" + applicantId);
+        appointmentFor.checked = true;
+        OnAppointmentForChange(null, applicantId);
+        familyModalClose = true;
+        $('#familyDisclaimer').modal('hide');
+    }
+    function OnFamilyAccept() {
+        familyModalClose = true;
+        $('#familyDisclaimer').modal('hide');
+    }
+    function OnPlReject(){
+        $("#"+catItem).data("kendoDropDownList").value(null);
+        $("#PremiumTypeModel").modal('hide');
+         $("#MobileBioTypeModel").modal('hide');
+    }
+    var addressModalClose = false;
+    var applicantsNoFilterData = [];
+    var visaTypeFilterData = [];
+    var visasubIdFilterData = [];
+    var locationFilterData = [];
+    var categoryFilterData = [];
+    var applicantId = 0;
+    var rspData = [];
+    var locationData =[{"Id":"8347","Name":"Tetouan","Code":"TETOUAN","VisaTypeIds":"[\"4736\",\"4737\"]","VisaSubTypeIds":"[\"9712\"]","MissionId":"33f113d1-fa23-4292-b865-393675093998"},{"Id":"8348","Name":"Tangier","Code":"TANGIER","VisaTypeIds":"[\"4736\",\"4737\"]","VisaSubTypeIds":"[\"9712\",\"9724\",\"5fe65e9a-4203-4e4e-97b1-d641a38460b8\"]","MissionId":"d133459a-6482-45ed-bd00-5ff32aa8b71b"},{"Id":"8349","Name":"Casablanca","Code":"CASABLANCA","VisaTypeIds":"[\"bddf9df8-5f71-413e-aeb3-8f59308e79a2\",\"f45b9b2b-0bae-4a04-bf61-9dbabb9db2ac\",\"4736\",\"4737\",\"c6c05a56-38d7-4929-8b3d-77a2280d9c20\",\"5e43f8e9-cb93-42f6-8350-9d8e2e79a42d\",\"889bd811-ae40-4507-93f3-cc1486c0f282\"]","VisaSubTypeIds":"[\"9713\",\"9714\",\"9715\",\"9716\",\"9717\",\"9718\",\"9719\",\"9726\",\"9f7ff970-0405-43b5-ba82-f7815cfb95db\",\"c27198c6-9451-4e1c-a8b8-491895c95b7c\",\"9729\",\"e88e6010-aff4-4794-9bc3-c66e4a0dd311\"]","MissionId":"beae2d19-89a9-46e7-9415-5422adafe619"},{"Id":"8350","Name":"Agadir","Code":"AGADIR","VisaTypeIds":"[\"4736\",\"4737\"]","VisaSubTypeIds":"[\"9712\",\"9725\",\"2d604bed-d1e3-4e44-b5b3-dd5c16e3d0ab\"]","MissionId":"4edec922-cd94-4955-9788-802269c9ff44"},{"Id":"8351","Name":"Rabat","Code":"RABAT","VisaTypeIds":"[\"4736\",\"4737\"]","VisaSubTypeIds":"[\"9712\",\"9720\",\"9721\",\"9722\",\"9723\",\"9727\",\"9728\"]","MissionId":"98a73e17-bf8f-41f2-933e-03e60b009327"},{"Id":"8352","Name":"Nador","Code":"NADOR","VisaTypeIds":"[\"4736\",\"4737\"]","VisaSubTypeIds":"[\"9712\",\"86d90dd5-f049-4007-8cbd-bc765410c8bd\"]","MissionId":"2c64c42a-1359-437a-9257-d8ad3f566e1a"}];
+    var visasubIdData =[{"Id":"9712","Name":"Schengen Visa","Value":"4737","Code":"WEB_BLS"},{"Id":"9713","Name":"Student Visa","Value":"4736","Code":"WEB_BLS"},{"Id":"9714","Name":"Family Reunification Visa","Value":"4736","Code":"WEB_BLS"},{"Id":"9715","Name":"National Visa","Value":"4736","Code":"WEB_EMBASSY"},{"Id":"9716","Name":"Work Visa","Value":"4736","Code":"WEB_BLS"},{"Id":"9717","Name":"Casa 1","Value":null,"Code":"WEB_BLS"},{"Id":"9718","Name":"Casa 2","Value":null,"Code":"WEB_BLS"},{"Id":"9719","Name":"Casa 3","Value":null,"Code":"WEB_BLS"},{"Id":"9720","Name":"Students - Language/selectivity","Value":"4736","Code":"WEB_BLS"},{"Id":"9721","Name":"Students - Non-tertiary studies","Value":"4736","Code":"WEB_BLS"},{"Id":"9722","Name":"Students - Graduate studies","Value":"4736","Code":"WEB_BLS"},{"Id":"9723","Name":"Student - Others","Value":"4736","Code":"WEB_BLS"},{"Id":"9724","Name":"Students Less than 6 Months (SSU).","Value":"4736","Code":"WEB_BLS"},{"Id":"9725","Name":"Non-university students","Value":"4736","Code":"WEB_BLS"},{"Id":"9726","Name":"Casa 1","Value":"4737","Code":"WEB_BLS"},{"Id":"9727","Name":"Schengen Visa - With prior Spain Visa 2024","Value":"4737","Code":"WEB_BLS"},{"Id":"9728","Name":"Schengen Visa – With Prior Schengen Visa 2023","Value":"4737","Code":"WEB_BLS"},{"Id":"9729","Name":"Casa 2","Value":"4737","Code":"WEB_BLS"}];
+    var redirect = '';
+    var visaIdData =[{"Id":"4736","Name":"National Visa","VisaTypeCode":"NATIONAL_VISA","AppointmentSource":null},{"Id":"4737","Name":"Schengen Visa","VisaTypeCode":"SCHENGEN_VISA","AppointmentSource":null}];
+    var applicantsNoData=[{"Id":"1777","Name":"2 Members","Value":"1777"},{"Id":"1778","Name":"3 Members","Value":"1778"},{"Id":"1779","Name":"4 Members","Value":"1779"},{"Id":"1780","Name":"5 Members","Value":"1780"},{"Id":"1781","Name":"6 Members","Value":"1781"}];
+    var categoryData=[{"Id":"8788","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8352"},{"Id":"8789","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8352"},{"Id":"8790","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8352"},{"Id":"8791","Name":"Mobile Bio","Code":"MOBILE_BIOMETRIC","LegalEntityId":"8350"},{"Id":"8792","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8350"},{"Id":"8793","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8350"},{"Id":"8794","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8350"},{"Id":"8795","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8349"},{"Id":"8796","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8349"},{"Id":"8797","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8349"},{"Id":"8798","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8348"},{"Id":"8799","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8348"},{"Id":"8800","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8348"},{"Id":"8801","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8347"},{"Id":"8802","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8347"},{"Id":"8803","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8347"},{"Id":"8804","Name":"Premium","Code":"CATEGORY_PREMIUM","LegalEntityId":"8351"},{"Id":"8805","Name":"Prime Time","Code":"PRIME_TIME","LegalEntityId":"8351"},{"Id":"8806","Name":"Normal","Code":"CATEGORY_NORMAL","LegalEntityId":"8351"}];
+</script>
+<div id="div-main" class="row pb-3 pl-5 pr-5">
+        <div class="d-none d-sm-block col-md-6">
+        </div>
+        <div class="shadow rounded-3 p-3 col-md-3 d-sm-12">
+            <div class="text-center col-12">
+                <a href="index.html">
+                    <img class="h-50px mb-2" src="/assets/images/logo.svg" alt="logo">
+                </a>
+            </div>
+            <form id="visatypeform" method="post" action="#">
+                <div class="validation-summary text-danger mb-3 validation-summary-valid" data-valmsg-summary="true"><ul><li style="display:none"></li>
+</ul></div>
+                <div class="pt-2">
+<div class="mb-3 ydadjic tfpsnznd ftvpy zbvcn smdaevk jqgbs ovbrcn vvsbqcdt amkkalk tgdtmf zpexnpuwj kvnye jlpnbbrej mjwomea mjwond omajc mt-5">
+	                                <label class="form-label" for="nmros">Location<span class="required">*</span></label>
+	                                <input id="nmros" name="nmros" style="width:100%">
+                                </div><div class="mb-3 lshapw jlpnbbrej mjwomea jqgbs tfpsnznd hxrxolof vvsbqcdt smdaevk amkkalk kvnye zpexnpuwj mjwond tgdtmf ydadjic ovbrcn ftvpy omajc zbvcn xwmfke mt-5">
+	                                <label class="form-label" for="idplq">Location<span class="required">*</span></label>
+	                                <input id="idplq" name="idplq" style="width:100%">
+                                </div><div class="mb-3 zbvcn mjwond qlsyh lljpxrfv zxkfmrrw npmsgak mtcznopi riqkrhwpj fhjuma ftvpy jqgbs lshapw vvsbqcdt xwmfke tgdtmf gysgx smdaevk ertfki yuidymqg xiymyp mjwomea ydadjic kvnye omajc vkwonybpl tfpsnznd jlpnbbrej zpexnpuwj amkkalk ovbrcn hxrxolof mt-5">
+	                                <label class="form-label" for="tfodsnzxm">Location<span class="required">*</span></label>
+	                                <input id="tfodsnzxm" name="tfodsnzxm" style="width:100%">
+                                </div><div class="mb-3 ydadjic zbvcn mjwond vvsbqcdt xdhjexv tfpsnznd amkkalk zpexnpuwj jlpnbbrej smdaevk kvnye mt-5">
+	                                <label class="form-label" for="tvhqigb">Location<span class="required">*</span></label>
+	                                <input id="tvhqigb" name="tvhqigb" style="width:100%">
+                                </div><div class="mb-3 aqterkipu riqkrhwpj npmsgak zbvcn amkkalk kvnye fhjuma xwmfke ftvpy vkwonybpl tgdtmf omajc gysgx ovbrcn ydadjic jlpnbbrej mjwomea jqgbs ertfki zpexnpuwj tfpsnznd smdaevk yuidymqg vvsbqcdt mtcznopi hxrxolof qlsyh zxkfmrrw xiymyp lljpxrfv lshapw mjwond mt-5">
+	                                <label class="form-label" for="xckkyfom">Location<span class="required">*</span></label>
+	                                <input id="xckkyfom" name="xckkyfom" style="width:100%">
+                                </div><div class="mb-3 vvsbqcdt npmsgak qlsyh fhjuma kvnye hxrxolof mjwomea mtcznopi ertfki ydadjic riqkrhwpj jlpnbbrej jqgbs mjwond lshapw tgdtmf zxkfmrrw zbvcn ovbrcn vkwonybpl aqterkipu ftvpy gysgx yuidymqg xwmfke xiymyp smdaevk lljpxrfv zpexnpuwj amkkalk omajc tfpsnznd mt-4">
+	                                <label class="form-label" for="rqlatbt">Visa Type<span class="required">*</span></label>
+	                                <input id="rqlatbt" name="rqlatbt" style="width:100%">
+                                </div><div class="mb-3 mjwond jqgbs vkwonybpl ydadjic vvsbqcdt kvnye riqkrhwpj xiymyp mtcznopi zxkfmrrw zbvcn lshapw lljpxrfv xwmfke tgdtmf hxrxolof yuidymqg mjwomea tfpsnznd qlsyh zpexnpuwj smdaevk omajc npmsgak jlpnbbrej ftvpy amkkalk ertfki gysgx fhjuma ovbrcn aqterkipu mt-4">
+	                                <label class="form-label" for="wuzcyxt">Visa Type<span class="required">*</span></label>
+	                                <input id="wuzcyxt" name="wuzcyxt" style="width:100%">
+                                </div><div class="mb-3 amkkalk jqgbs xiymyp kvnye aqterkipu vkwonybpl lljpxrfv fhjuma ovbrcn xdhjexv smdaevk mtcznopi tfpsnznd riqkrhwpj zpexnpuwj xwmfke hxrxolof mjwomea vvsbqcdt jlpnbbrej mjwond ertfki zbvcn lshapw yuidymqg qlsyh wwrpc omajc ydadjic eqhwnjxt zxkfmrrw npmsgak gysgx sljnmam hzgywvap ftvpy mt-4">
+	                                <label class="form-label" for="vhwnq">Visa Type<span class="required">*</span></label>
+	                                <input id="vhwnq" name="vhwnq" style="width:100%">
+                                </div><div class="mb-3 omajc mjwond lljpxrfv hxrxolof jqgbs xwmfke zpexnpuwj ydadjic kvnye vvsbqcdt ovbrcn ftvpy smdaevk jlpnbbrej mjwomea zbvcn tgdtmf tfpsnznd lshapw amkkalk mt-4">
+	                                <label class="form-label" for="nesihg">Visa Type<span class="required">*</span></label>
+	                                <input id="nesihg" name="nesihg" style="width:100%">
+                                </div><div class="mb-3 ydadjic smdaevk hxrxolof jqgbs jlpnbbrej omajc mjwomea zxkfmrrw tgdtmf lljpxrfv vvsbqcdt tfpsnznd ertfki zbvcn ftvpy mjwond amkkalk ovbrcn xwmfke kvnye lshapw vkwonybpl zpexnpuwj mtcznopi mt-4">
+	                                <label class="form-label" for="wwhmrrkr">Visa Type<span class="required">*</span></label>
+	                                <input id="wwhmrrkr" name="wwhmrrkr" style="width:100%">
+                                </div><div class="mb-3 kvnye ydadjic zbvcn wwrpc fhjuma hxrxolof riqkrhwpj tgdtmf mjwond qlsyh omajc jqgbs gcvpwu zxkfmrrw vkwonybpl ftvpy xiymyp aqterkipu hzgywvap jlpnbbrej npmsgak mtcznopi mjwomea lshapw yuidymqg smdaevk tfpsnznd sljnmam gysgx vvsbqcdt xwmfke lljpxrfv ertfki zpexnpuwj ovbrcn eqhwnjxt amkkalk mt-5">
+	                                <label class="form-label" for="cdzsij">Visa Sub Type<span class="required">*</span></label>
+	                                <input id="cdzsij" name="cdzsij" style="width:100%">
+                                </div><div class="mb-3 zbvcn mjwond kvnye tfpsnznd zpexnpuwj jlpnbbrej tgdtmf vvsbqcdt amkkalk smdaevk ydadjic mt-5">
+	                                <label class="form-label" for="lizuxf">Visa Sub Type<span class="required">*</span></label>
+	                                <input id="lizuxf" name="lizuxf" style="width:100%">
+                                </div><div class="mb-3 smdaevk lljpxrfv xwmfke amkkalk zbvcn omajc mjwond hxrxolof lshapw jqgbs jlpnbbrej mjwomea mtcznopi fhjuma ftvpy kvnye zxkfmrrw qlsyh ertfki tgdtmf tfpsnznd vvsbqcdt yuidymqg ovbrcn vkwonybpl gysgx zpexnpuwj ydadjic mt-5">
+	                                <label class="form-label" for="wcomcod">Visa Sub Type<span class="required">*</span></label>
+	                                <input id="wcomcod" name="wcomcod" style="width:100%">
+                                </div><div class="mb-3 smdaevk mjwomea zbvcn jlpnbbrej ydadjic ftvpy lshapw tgdtmf kvnye zpexnpuwj amkkalk mjwond tfpsnznd vvsbqcdt ovbrcn omajc jqgbs mt-5">
+	                                <label class="form-label" for="ubvwinwc">Visa Sub Type<span class="required">*</span></label>
+	                                <input id="ubvwinwc" name="ubvwinwc" style="width:100%">
+                                </div><div class="mb-3 lshapw smdaevk ftvpy ovbrcn fhjuma omajc sljnmam zpexnpuwj wwrpc yuidymqg ertfki aqterkipu npmsgak mjwomea jlpnbbrej riqkrhwpj xwmfke xdhjexv ydadjic xiymyp jqgbs amkkalk zxkfmrrw mtcznopi eqhwnjxt vvsbqcdt vkwonybpl gysgx qlsyh gcvpwu kvnye tfpsnznd hxrxolof zbvcn mjwond lljpxrfv hzgywvap mt-5">
+	                                <label class="form-label" for="qobfabi">Visa Sub Type<span class="required">*</span></label>
+	                                <input id="qobfabi" name="qobfabi" style="width:100%">
+                                </div><div class="mb-3 amkkalk vvsbqcdt xwmfke fhjuma zbvcn mjwomea hxrxolof lljpxrfv ertfki ydadjic zxkfmrrw kvnye omajc jlpnbbrej smdaevk ftvpy tgdtmf ovbrcn jqgbs mtcznopi mjwond gysgx tfpsnznd lshapw zpexnpuwj yuidymqg vkwonybpl qlsyh mt-4">
+	                                <label class="form-label" for="nymert">Category<span class="required">*</span></label>
+	                                <input id="nymert" name="nymert" style="width:100%">
+                                </div><div class="mb-3 ovbrcn mjwomea kvnye vvsbqcdt amkkalk omajc jlpnbbrej tgdtmf ftvpy mjwond ydadjic zbvcn smdaevk jqgbs zpexnpuwj tfpsnznd lshapw mt-4">
+	                                <label class="form-label" for="wfxmyzmob">Category<span class="required">*</span></label>
+	                                <input id="wfxmyzmob" name="wfxmyzmob" style="width:100%">
+                                </div><div class="mb-3 ovbrcn mjwond ydadjic mjwomea jlpnbbrej smdaevk zbvcn amkkalk ftvpy vvsbqcdt omajc xdhjexv kvnye tfpsnznd jqgbs zpexnpuwj mt-4">
+	                                <label class="form-label" for="pwspkfp">Category<span class="required">*</span></label>
+	                                <input id="pwspkfp" name="pwspkfp" style="width:100%">
+                                </div><div class="mb-3 lshapw mjwomea zbvcn xwmfke ftvpy vvsbqcdt lljpxrfv tfpsnznd zxkfmrrw ertfki gysgx hxrxolof tgdtmf vkwonybpl omajc ovbrcn kvnye mjwond mtcznopi jlpnbbrej smdaevk amkkalk fhjuma ydadjic jqgbs zpexnpuwj mt-4">
+	                                <label class="form-label" for="zhjatck">Category<span class="required">*</span></label>
+	                                <input id="zhjatck" name="zhjatck" style="width:100%">
+                                </div><div class="mb-3 mjwond lljpxrfv tgdtmf hxrxolof ydadjic yuidymqg zpexnpuwj zbvcn jqgbs ftvpy fhjuma amkkalk ovbrcn xiymyp vvsbqcdt eqhwnjxt npmsgak ertfki wwrpc jlpnbbrej vkwonybpl aqterkipu zxkfmrrw tfpsnznd xwmfke riqkrhwpj gysgx smdaevk kvnye mtcznopi lshapw hzgywvap sljnmam mjwomea omajc qlsyh mt-4">
+	                                <label class="form-label" for="uvqmnun">Category<span class="required">*</span></label>
+	                                <input id="uvqmnun" name="uvqmnun" style="width:100%">
+                                </div><div class="mb-3 rtrfrsrkx aqterkipu zpexnpuwj npmsgak amkkalk vkwonybpl lshapw zxkfmrrw sljnmam fhjuma eqhwnjxt zbvcn yuidymqg hzgywvap mjwond mjwomea nnxna xdhjexv yweul gcvpwu xwmfke jlpnbbrej ydadjic gysgx riqkrhwpj vvsbqcdt tfpsnznd jqgbs kvnye qlsyh lljpxrfv ertfki xiymyp hxrxolof ovbrcn omajc ftvpy smdaevk mtcznopi wwrpc mt-5">
+                            <label class="form-label">Appointment For<span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check radio-bg-light">
+                                    <input type="radio" name="afsehenuc" checked='checked'  class="form-check-input" value="Individual" id="selfsehenuc" checked onclick="OnAppointmentForChange(event,'sehenuc');" />
+                                    <label class="form-check-label" for="selfsehenuc" style="margin-left: 22px;">
+                                       Individual
+                                    </label>
+                                </div>
+                               <div class="form-check radio-bg-light">
+                                    <input type="radio"  name="afsehenuc"  class="form-check-input" value="Family" id="familysehenuc" onclick="OnAppointmentForChange(event,'sehenuc');" />
+                                    <label class="form-check-label" for="familysehenuc" style="margin-left: 22px;">
+                                        Family
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 rtrfrsrkx aqterkipu zpexnpuwj npmsgak amkkalk vkwonybpl lshapw zxkfmrrw sljnmam fhjuma eqhwnjxt zbvcn yuidymqg hzgywvap mjwond mjwomea nnxna xdhjexv yweul gcvpwu xwmfke jlpnbbrej ydadjic gysgx riqkrhwpj vvsbqcdt tfpsnznd jqgbs kvnye qlsyh lljpxrfv ertfki xiymyp hxrxolof ovbrcn omajc ftvpy smdaevk mtcznopi wwrpc mt-5">
+                            <div id="memberssehenuc" style='display:none;' >
+	                            <label class="form-label" for="ansehenuc">Number Of Members<span class="required">*</span></label>
+	                            <input id="ansehenuc" name="ansehenuc" style="width:100%">
+                                <script>
+                                        $(document).ready(function () {
+                                            $("#ansehenuc").kendoDropDownList({
+                                                optionLabel: "--Select--",
+                                                dataTextField: "Name",
+                                                dataValueField: "Value",
+                                                filter: "contains",
+                                                dataSource: applicantsNoData,
+                                                open: onDrpOpen,
+                                                close: onDrpClose,
+                                                select: onDrpSelect
+                                            });
+                                        });
+                                 </script>
+                             </div>              
+                        </div><div class="mb-3 jlpnbbrej tgdtmf smdaevk ftvpy ydadjic zpexnpuwj jqgbs zbvcn tfpsnznd kvnye vvsbqcdt amkkalk mjwond mjwomea mt-5">
+                            <label class="form-label">Appointment For<span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check radio-bg-light">
+                                    <input type="radio" name="afbebtq" checked='checked'  class="form-check-input" value="Individual" id="selfbebtq" checked onclick="OnAppointmentForChange(event,'bebtq');" />
+                                    <label class="form-check-label" for="selfbebtq" style="margin-left: 22px;">
+                                       Individual
+                                    </label>
+                                </div>
+                               <div class="form-check radio-bg-light">
+                                    <input type="radio"  name="afbebtq"  class="form-check-input" value="Family" id="familybebtq" onclick="OnAppointmentForChange(event,'bebtq');" />
+                                    <label class="form-check-label" for="familybebtq" style="margin-left: 22px;">
+                                        Family
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 jlpnbbrej tgdtmf smdaevk ftvpy ydadjic zpexnpuwj jqgbs zbvcn tfpsnznd kvnye vvsbqcdt amkkalk mjwond mjwomea mt-5">
+                            <div id="membersbebtq" style='display:none;' >
+	                            <label class="form-label" for="anbebtq">Number Of Members<span class="required">*</span></label>
+	                            <input id="anbebtq" name="anbebtq" style="width:100%">
+                                <script>
+                                        $(document).ready(function () {
+                                            $("#anbebtq").kendoDropDownList({
+                                                optionLabel: "--Select--",
+                                                dataTextField: "Name",
+                                                dataValueField: "Value",
+                                                filter: "contains",
+                                                dataSource: applicantsNoData,
+                                                open: onDrpOpen,
+                                                close: onDrpClose,
+                                                select: onDrpSelect
+                                            });
+                                        });
+                                 </script>
+                             </div>              
+                        </div><div class="mb-3 jqgbs npmsgak riqkrhwpj tgdtmf kvnye ovbrcn ftvpy zpexnpuwj mtcznopi mjwomea lljpxrfv tfpsnznd hxrxolof ertfki wwrpc vkwonybpl lshapw yuidymqg gysgx mjwond vvsbqcdt ydadjic jlpnbbrej amkkalk smdaevk qlsyh aqterkipu xwmfke xiymyp omajc fhjuma zbvcn zxkfmrrw mt-5">
+                            <label class="form-label">Appointment For<span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check radio-bg-light">
+                                    <input type="radio" name="afkthsloa" checked='checked'  class="form-check-input" value="Individual" id="selfkthsloa" checked onclick="OnAppointmentForChange(event,'kthsloa');" />
+                                    <label class="form-check-label" for="selfkthsloa" style="margin-left: 22px;">
+                                       Individual
+                                    </label>
+                                </div>
+                               <div class="form-check radio-bg-light">
+                                    <input type="radio"  name="afkthsloa"  class="form-check-input" value="Family" id="familykthsloa" onclick="OnAppointmentForChange(event,'kthsloa');" />
+                                    <label class="form-check-label" for="familykthsloa" style="margin-left: 22px;">
+                                        Family
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 jqgbs npmsgak riqkrhwpj tgdtmf kvnye ovbrcn ftvpy zpexnpuwj mtcznopi mjwomea lljpxrfv tfpsnznd hxrxolof ertfki wwrpc vkwonybpl lshapw yuidymqg gysgx mjwond vvsbqcdt ydadjic jlpnbbrej amkkalk smdaevk qlsyh aqterkipu xwmfke xiymyp omajc fhjuma zbvcn zxkfmrrw mt-5">
+                            <div id="memberskthsloa" style='display:none;' >
+	                            <label class="form-label" for="ankthsloa">Number Of Members<span class="required">*</span></label>
+	                            <input id="ankthsloa" name="ankthsloa" style="width:100%">
+                                <script>
+                                        $(document).ready(function () {
+                                            $("#ankthsloa").kendoDropDownList({
+                                                optionLabel: "--Select--",
+                                                dataTextField: "Name",
+                                                dataValueField: "Value",
+                                                filter: "contains",
+                                                dataSource: applicantsNoData,
+                                                open: onDrpOpen,
+                                                close: onDrpClose,
+                                                select: onDrpSelect
+                                            });
+                                        });
+                                 </script>
+                             </div>              
+                        </div><div class="mb-3 mjwomea vvsbqcdt lljpxrfv ertfki zpexnpuwj ftvpy riqkrhwpj zbvcn xwmfke mtcznopi tfpsnznd yuidymqg gysgx mjwond fhjuma amkkalk aqterkipu qlsyh omajc zxkfmrrw kvnye lshapw ydadjic xiymyp npmsgak jlpnbbrej vkwonybpl hxrxolof ovbrcn smdaevk tgdtmf jqgbs mt-5">
+                            <label class="form-label">Appointment For<span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check radio-bg-light">
+                                    <input type="radio" name="afdghhsd" checked='checked'  class="form-check-input" value="Individual" id="selfdghhsd" checked onclick="OnAppointmentForChange(event,'dghhsd');" />
+                                    <label class="form-check-label" for="selfdghhsd" style="margin-left: 22px;">
+                                       Individual
+                                    </label>
+                                </div>
+                               <div class="form-check radio-bg-light">
+                                    <input type="radio"  name="afdghhsd"  class="form-check-input" value="Family" id="familydghhsd" onclick="OnAppointmentForChange(event,'dghhsd');" />
+                                    <label class="form-check-label" for="familydghhsd" style="margin-left: 22px;">
+                                        Family
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 mjwomea vvsbqcdt lljpxrfv ertfki zpexnpuwj ftvpy riqkrhwpj zbvcn xwmfke mtcznopi tfpsnznd yuidymqg gysgx mjwond fhjuma amkkalk aqterkipu qlsyh omajc zxkfmrrw kvnye lshapw ydadjic xiymyp npmsgak jlpnbbrej vkwonybpl hxrxolof ovbrcn smdaevk tgdtmf jqgbs mt-5">
+                            <div id="membersdghhsd" style='display:none;' >
+	                            <label class="form-label" for="andghhsd">Number Of Members<span class="required">*</span></label>
+	                            <input id="andghhsd" name="andghhsd" style="width:100%">
+                                <script>
+                                        $(document).ready(function () {
+                                            $("#andghhsd").kendoDropDownList({
+                                                optionLabel: "--Select--",
+                                                dataTextField: "Name",
+                                                dataValueField: "Value",
+                                                filter: "contains",
+                                                dataSource: applicantsNoData,
+                                                open: onDrpOpen,
+                                                close: onDrpClose,
+                                                select: onDrpSelect
+                                            });
+                                        });
+                                 </script>
+                             </div>              
+                        </div><div class="mb-3 hxrxolof jlpnbbrej tfpsnznd vvsbqcdt ydadjic zpexnpuwj kvnye xwmfke smdaevk amkkalk zbvcn lshapw lljpxrfv tgdtmf jqgbs omajc ftvpy mjwomea ovbrcn mjwond zxkfmrrw mt-5">
+                            <label class="form-label">Appointment For<span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check radio-bg-light">
+                                    <input type="radio" name="affzarzmzco" checked='checked'  class="form-check-input" value="Individual" id="selffzarzmzco" checked onclick="OnAppointmentForChange(event,'fzarzmzco');" />
+                                    <label class="form-check-label" for="selffzarzmzco" style="margin-left: 22px;">
+                                       Individual
+                                    </label>
+                                </div>
+                               <div class="form-check radio-bg-light">
+                                    <input type="radio"  name="affzarzmzco"  class="form-check-input" value="Family" id="familyfzarzmzco" onclick="OnAppointmentForChange(event,'fzarzmzco');" />
+                                    <label class="form-check-label" for="familyfzarzmzco" style="margin-left: 22px;">
+                                        Family
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 hxrxolof jlpnbbrej tfpsnznd vvsbqcdt ydadjic zpexnpuwj kvnye xwmfke smdaevk amkkalk zbvcn lshapw lljpxrfv tgdtmf jqgbs omajc ftvpy mjwomea ovbrcn mjwond zxkfmrrw mt-5">
+                            <div id="membersfzarzmzco" style='display:none;' >
+	                            <label class="form-label" for="anfzarzmzco">Number Of Members<span class="required">*</span></label>
+	                            <input id="anfzarzmzco" name="anfzarzmzco" style="width:100%">
+                                <script>
+                                        $(document).ready(function () {
+                                            $("#anfzarzmzco").kendoDropDownList({
+                                                optionLabel: "--Select--",
+                                                dataTextField: "Name",
+                                                dataValueField: "Value",
+                                                filter: "contains",
+                                                dataSource: applicantsNoData,
+                                                open: onDrpOpen,
+                                                close: onDrpClose,
+                                                select: onDrpSelect
+                                            });
+                                        });
+                                 </script>
+                             </div>              
+                        </div>
+<script>
+                                    $(document).ready(function () { 
+                                        
+$("#nmros").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: locationData,
+                                                    change:nmros_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#idplq").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: locationData,
+                                                    change:idplq_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#tfodsnzxm").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: locationData,
+                                                    change:tfodsnzxm_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#tvhqigb").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: locationData,
+                                                    change:tvhqigb_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#xckkyfom").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: locationData,
+                                                    change:xckkyfom_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#rqlatbt").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:rqlatbt_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#wuzcyxt").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:wuzcyxt_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#vhwnq").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:vhwnq_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#nesihg").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:nesihg_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#wwhmrrkr").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:wwhmrrkr_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#cdzsij").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visasubIdFilterData,
+                                                    open: onDrpOpen,
+                                                    change:cdzsij_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#lizuxf").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visasubIdFilterData,
+                                                    open: onDrpOpen,
+                                                    change:lizuxf_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#wcomcod").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visasubIdFilterData,
+                                                    open: onDrpOpen,
+                                                    change:wcomcod_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#ubvwinwc").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visasubIdFilterData,
+                                                    open: onDrpOpen,
+                                                    change:ubvwinwc_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#qobfabi").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visasubIdFilterData,
+                                                    open: onDrpOpen,
+                                                    change:qobfabi_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#sehenuc").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:sehenuc_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#bebtq").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:bebtq_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#kthsloa").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:kthsloa_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#dghhsd").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:dghhsd_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#fzarzmzco").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: visaTypeFilterData,
+                                                    change:fzarzmzco_change,
+                                                    open: onDrpOpen,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+
+                                               });
+$("#nymert").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: categoryData,
+                                                    open: onDrpOpen,
+                                                    change:nymert_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#wfxmyzmob").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: categoryData,
+                                                    open: onDrpOpen,
+                                                    change:wfxmyzmob_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#pwspkfp").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: categoryData,
+                                                    open: onDrpOpen,
+                                                    change:pwspkfp_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#zhjatck").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: categoryData,
+                                                    open: onDrpOpen,
+                                                    change:zhjatck_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+$("#uvqmnun").kendoDropDownList({
+                                                    optionLabel: "--Select--",
+                                                    dataTextField: "Name",
+                                                    dataValueField: "Id",
+                                                    filter: "contains",
+                                                    dataSource: categoryData,
+                                                    open: onDrpOpen,
+                                                    change:uvqmnun_change,
+                                                    autoBind:false,
+                                                    close: onDrpClose,
+                                                    select: onDrpSelect
+                                               });
+                                         
+                                         
+                                         
+                                         
+                                        
+                                    });
+                                    
+function nmros_change(e) {
+     
+                                            locationDataItem = e.sender.dataItem();
+                                            if(locationDataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Id==='0');
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                                visaTypeFilterData = visaIdData.filter(v => locationDataItem.VisaTypeIds.includes(v.Id));
+                                                $("#rqlatbt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wuzcyxt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#vhwnq").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#nesihg").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wwhmrrkr").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+
+                                                categoryFilterData = categoryData.filter(c => c.LegalEntityId==locationDataItem.Id);
+                                                $("#nymert").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#wfxmyzmob").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#pwspkfp").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#zhjatck").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#uvqmnun").data("kendoDropDownList").setDataSource(categoryFilterData);
+
+                                            }
+                                        }
+function idplq_change(e) {
+     
+                                            locationDataItem = e.sender.dataItem();
+                                            if(locationDataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Id==='0');
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                                visaTypeFilterData = visaIdData.filter(v => locationDataItem.VisaTypeIds.includes(v.Id));
+                                                $("#rqlatbt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wuzcyxt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#vhwnq").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#nesihg").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wwhmrrkr").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+
+                                                categoryFilterData = categoryData.filter(c => c.LegalEntityId==locationDataItem.Id);
+                                                $("#nymert").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#wfxmyzmob").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#pwspkfp").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#zhjatck").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#uvqmnun").data("kendoDropDownList").setDataSource(categoryFilterData);
+
+                                            }
+                                        }
+function tfodsnzxm_change(e) {
+     
+                                            locationDataItem = e.sender.dataItem();
+                                            if(locationDataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Id==='0');
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                                visaTypeFilterData = visaIdData.filter(v => locationDataItem.VisaTypeIds.includes(v.Id));
+                                                $("#rqlatbt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wuzcyxt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#vhwnq").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#nesihg").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wwhmrrkr").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+
+                                                categoryFilterData = categoryData.filter(c => c.LegalEntityId==locationDataItem.Id);
+                                                $("#nymert").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#wfxmyzmob").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#pwspkfp").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#zhjatck").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#uvqmnun").data("kendoDropDownList").setDataSource(categoryFilterData);
+
+                                            }
+                                        }
+function tvhqigb_change(e) {
+     
+                                            locationDataItem = e.sender.dataItem();
+                                            if(locationDataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Id==='0');
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                                visaTypeFilterData = visaIdData.filter(v => locationDataItem.VisaTypeIds.includes(v.Id));
+                                                $("#rqlatbt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wuzcyxt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#vhwnq").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#nesihg").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wwhmrrkr").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+
+                                                categoryFilterData = categoryData.filter(c => c.LegalEntityId==locationDataItem.Id);
+                                                $("#nymert").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#wfxmyzmob").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#pwspkfp").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#zhjatck").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#uvqmnun").data("kendoDropDownList").setDataSource(categoryFilterData);
+
+                                            }
+                                        }
+function xckkyfom_change(e) {
+     
+                                            locationDataItem = e.sender.dataItem();
+                                            if(locationDataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Id==='0');
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                                visaTypeFilterData = visaIdData.filter(v => locationDataItem.VisaTypeIds.includes(v.Id));
+                                                $("#rqlatbt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wuzcyxt").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#vhwnq").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#nesihg").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+$("#wwhmrrkr").data("kendoDropDownList").setDataSource(visaTypeFilterData);
+
+                                                categoryFilterData = categoryData.filter(c => c.LegalEntityId==locationDataItem.Id);
+                                                $("#nymert").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#wfxmyzmob").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#pwspkfp").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#zhjatck").data("kendoDropDownList").setDataSource(categoryFilterData);
+$("#uvqmnun").data("kendoDropDownList").setDataSource(categoryFilterData);
+
+                                            }
+                                        }
+ function rqlatbt_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                if(locationDataItem!=null && locationDataItem.VisaSubTypeIds!=null){
+                                                    visasubIdFilterData = visasubIdFilterData.filter(v => locationDataItem.VisaSubTypeIds.includes(v.Id));
+                                                }
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                            if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_EXISTING')
+                                            {
+                                               $('#existingVisatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_ONE')
+                                            {
+                                               $('#Casa1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_TWO')
+                                            {
+                                               $('#Casa2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_THREE')
+                                            {
+                                               $('#Casa3Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_ONE')
+                                            {
+                                               $('#Rabat1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_TWO')
+                                            {
+                                               $('#Rabat2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_THREE')
+                                            {
+                                               $('#Rabat3Visatype').modal('show');
+                                            }
+                                        }
+ function wuzcyxt_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                if(locationDataItem!=null && locationDataItem.VisaSubTypeIds!=null){
+                                                    visasubIdFilterData = visasubIdFilterData.filter(v => locationDataItem.VisaSubTypeIds.includes(v.Id));
+                                                }
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                            if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_EXISTING')
+                                            {
+                                               $('#existingVisatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_ONE')
+                                            {
+                                               $('#Casa1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_TWO')
+                                            {
+                                               $('#Casa2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_THREE')
+                                            {
+                                               $('#Casa3Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_ONE')
+                                            {
+                                               $('#Rabat1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_TWO')
+                                            {
+                                               $('#Rabat2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_THREE')
+                                            {
+                                               $('#Rabat3Visatype').modal('show');
+                                            }
+                                        }
+ function vhwnq_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                if(locationDataItem!=null && locationDataItem.VisaSubTypeIds!=null){
+                                                    visasubIdFilterData = visasubIdFilterData.filter(v => locationDataItem.VisaSubTypeIds.includes(v.Id));
+                                                }
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                            if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_EXISTING')
+                                            {
+                                               $('#existingVisatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_ONE')
+                                            {
+                                               $('#Casa1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_TWO')
+                                            {
+                                               $('#Casa2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_THREE')
+                                            {
+                                               $('#Casa3Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_ONE')
+                                            {
+                                               $('#Rabat1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_TWO')
+                                            {
+                                               $('#Rabat2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_THREE')
+                                            {
+                                               $('#Rabat3Visatype').modal('show');
+                                            }
+                                        }
+ function nesihg_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                if(locationDataItem!=null && locationDataItem.VisaSubTypeIds!=null){
+                                                    visasubIdFilterData = visasubIdFilterData.filter(v => locationDataItem.VisaSubTypeIds.includes(v.Id));
+                                                }
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                            if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_EXISTING')
+                                            {
+                                               $('#existingVisatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_ONE')
+                                            {
+                                               $('#Casa1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_TWO')
+                                            {
+                                               $('#Casa2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_THREE')
+                                            {
+                                               $('#Casa3Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_ONE')
+                                            {
+                                               $('#Rabat1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_TWO')
+                                            {
+                                               $('#Rabat2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_THREE')
+                                            {
+                                               $('#Rabat3Visatype').modal('show');
+                                            }
+                                        }
+ function wwhmrrkr_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                if(locationDataItem!=null && locationDataItem.VisaSubTypeIds!=null){
+                                                    visasubIdFilterData = visasubIdFilterData.filter(v => locationDataItem.VisaSubTypeIds.includes(v.Id));
+                                                }
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                            if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_EXISTING')
+                                            {
+                                               $('#existingVisatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_ONE')
+                                            {
+                                               $('#Casa1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_TWO')
+                                            {
+                                               $('#Casa2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_CASA_THREE')
+                                            {
+                                               $('#Casa3Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_ONE')
+                                            {
+                                               $('#Rabat1Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_TWO')
+                                            {
+                                               $('#Rabat2Visatype').modal('show');
+                                            }
+                                            else if (dataItem.VisaTypeCode === 'SCHENGEN_VISA_RABAT_THREE')
+                                            {
+                                               $('#Rabat3Visatype').modal('show');
+                                            }
+                                        }
+ function cdzsij_change(e) {
+
+                                            var dataItem = e.sender.dataItem();
+                                            $("#DataSource").val(dataItem.Code);
+                                        }
+ function lizuxf_change(e) {
+
+                                            var dataItem = e.sender.dataItem();
+                                            $("#DataSource").val(dataItem.Code);
+                                        }
+ function wcomcod_change(e) {
+
+                                            var dataItem = e.sender.dataItem();
+                                            $("#DataSource").val(dataItem.Code);
+                                        }
+ function ubvwinwc_change(e) {
+
+                                            var dataItem = e.sender.dataItem();
+                                            $("#DataSource").val(dataItem.Code);
+                                        }
+ function qobfabi_change(e) {
+
+                                            var dataItem = e.sender.dataItem();
+                                            $("#DataSource").val(dataItem.Code);
+                                        }
+ function sehenuc_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                        }
+ function bebtq_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                        }
+ function kthsloa_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                        }
+ function dghhsd_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                        }
+ function fzarzmzco_change(e) {
+                                            var dataItem = e.sender.dataItem();
+                                            if(dataItem.Id!=null){
+                                                visasubIdFilterData = visasubIdData.filter(v => v.Value === dataItem.Id);
+                                                $("#cdzsij").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#lizuxf").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#wcomcod").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#ubvwinwc").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+$("#qobfabi").data("kendoDropDownList").setDataSource(visasubIdFilterData);
+
+                                            }
+                                        }
+ function nymert_change(e) {
+                                            
+                                            catItem='nymert';
+                                            var dataItem = e.sender.dataItem();
+                                            if (dataItem.Code === 'CATEGORY_PREMIUM')
+                                            {
+                                               $("#PremiumTypeModel").modal('show');
+                                            }
+                                            if (dataItem.Code === 'MOBILE_BIOMETRIC')
+                                            {
+                                               $("#MobileBioTypeModel").modal('show');
+                                            }
+                                        }
+ function wfxmyzmob_change(e) {
+                                            
+                                            catItem='wfxmyzmob';
+                                            var dataItem = e.sender.dataItem();
+                                            if (dataItem.Code === 'CATEGORY_PREMIUM')
+                                            {
+                                               $("#PremiumTypeModel").modal('show');
+                                            }
+                                            if (dataItem.Code === 'MOBILE_BIOMETRIC')
+                                            {
+                                               $("#MobileBioTypeModel").modal('show');
+                                            }
+                                        }
+ function pwspkfp_change(e) {
+                                            
+                                            catItem='pwspkfp';
+                                            var dataItem = e.sender.dataItem();
+                                            if (dataItem.Code === 'CATEGORY_PREMIUM')
+                                            {
+                                               $("#PremiumTypeModel").modal('show');
+                                            }
+                                            if (dataItem.Code === 'MOBILE_BIOMETRIC')
+                                            {
+                                               $("#MobileBioTypeModel").modal('show');
+                                            }
+                                        }
+ function zhjatck_change(e) {
+                                            
+                                            catItem='zhjatck';
+                                            var dataItem = e.sender.dataItem();
+                                            if (dataItem.Code === 'CATEGORY_PREMIUM')
+                                            {
+                                               $("#PremiumTypeModel").modal('show');
+                                            }
+                                            if (dataItem.Code === 'MOBILE_BIOMETRIC')
+                                            {
+                                               $("#MobileBioTypeModel").modal('show');
+                                            }
+                                        }
+ function uvqmnun_change(e) {
+                                            
+                                            catItem='uvqmnun';
+                                            var dataItem = e.sender.dataItem();
+                                            if (dataItem.Code === 'CATEGORY_PREMIUM')
+                                            {
+                                               $("#PremiumTypeModel").modal('show');
+                                            }
+                                            if (dataItem.Code === 'MOBILE_BIOMETRIC')
+                                            {
+                                               $("#MobileBioTypeModel").modal('show');
+                                            }
+                                        }
+                               </script>                    <div class="text-center">
+                        <button class="btn btn-primary" id="btnSubmit" type="button" onclick="return OnSubmitVisaType();">Submit</button>
+                    </div>
+
+                </div>
+                
+                <input id="Data" name="Data" type="hidden" value="knLwr13TLNo&#x2B;aLIODDBgpCOveQEQ96de0P8Fb6bEt1sHRNP0xoefQGajNHOBZxvDPT4TmEBfj7NDJHnECHu4KGLt&#x2B;NJhEPO/mRyTbJGzdVZJqQADDAfJIwgRg31bP6gK0kmnnP2c10ZZBRBKiQeFkWsq6&#x2B;8uc5Iai/1i&#x2B;MPm9TuSulxcosBDtT4sGXeSqfDcTTaUCtqP2/FQ4onEarqJm&#x2B;FXAAzBfWLldINWUFFme5Qcb&#x2B;z8G8Re1fkLNC7CxEm/QLym749A0YMeepWBAj67TKrJey237mhkhsvcEDOIo24ibaGPyzHGQ1RMa9mCFzUO" />
+                <input id="DataSource" name="DataSource" type="hidden" value="WEB_BLS" />
+                <input id="ResponseData" name="ResponseData" type="hidden" value="" />
+                <input id="AppointmentFor" name="AppointmentFor" type="hidden" value="" />
+                 <input id="ReCaptchaToken" name="ReCaptchaToken" type="hidden" value="" />
+            <input name="__RequestVerificationToken" type="hidden" value="CfDJ8LYbiFPiSAFErivYdbxvaXF8w3-jjZazkSWPoSzqSqhDHehI958LOt2_4PGDkTJgS29EdjMpsyRp3fheymkYG4ochnMk6oSicDyyxpzWp3Cu-bxgrxX7bEuLVJchm_vgNa7TD_HXF0YLYD4memxxC0zlEYmsAq4alPLvDvB9kCV_6Ff8xkFzECylXGbGmM2QNw" /></form>
+        </div>
+        <div class="d-none d-sm-block col-md-3">
+        </div>
+</div>
+<div class="modal fade" id="familyDisclaimer" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">Family Appointment</h6>
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                    Please note that if you are booking family appointment then all members should be part of immediate family.<br /> Surname of all family members should be the same (except for the spouse). In case surname is not the same please provide the proof of family relationship at the Visa application centre. <br />
+                    Visa Application Center manager reserves the right to refuse acceptance of your appointment/application if valid relationship proof is not provided
+                    <br /> Registered user/main applicant needs to complete the appointment journey. <br />
+                    <br /> Children below 6 years in age do not need an appointment for Schengan Visa. <br />
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" type="button" onclick="return OnFamilyReject();">Reject</button>
+                <button class="btn btn-success" onclick="return OnFamilyAccept();">Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="commonModal" tabindex="-1" role="dialog" aria-labelledby="commonModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="commonModalLabel">  <span id="commonModalHeader" style="font-weight:600;" class="text-primary"></span></h6>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close">
+                </button>
+
+            </div>
+            <div class="modal-body scam-body" style="color:black;font-size:medium">
+                <span id="commonModalBody">
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="PremiumTypeModel" data-bs-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="PremiumTypeModelLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="payConfirmModalLabel">Premium Confirmation</h6>
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                  Premium Lounge is an optional service.<br/>
+ Please note that the Premium Lounge does not imply obtaining earlier appointments
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" type="button" onclick="return OnPlReject();" data-bs-dismiss="modal">Reject</button>
+                <button class="btn btn-success" type="button" data-bs-dismiss="modal">Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="MobileBioTypeModel" data-bs-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="MobileBioModelLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="payConfirmModalLabel">Mobile Bio Confirmation</h6>
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                    Mobile Biometric is an optional service and comes with additional charges.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" type="button" onclick="return OnPlReject();" data-bs-dismiss="modal">Reject</button>
+                <button class="btn btn-success" type="button" data-bs-dismiss="modal">Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="existingVisatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">Schengen Visa - Previous Visa Holder</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                    This category is applicable only for previous Schengen visa holders and you have to enter your visa details as a mandatory requirement.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Casa1Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">CASA 1</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                     -Applicants who have never previously obtained a Schengen visa.<br/>
+-Applicants who obtained a Schengen visa before January 2020.
+
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Casa2Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">CASA 2</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                   - People who have obtained a Schengen visa for a maximum of 2 years issued from 01-01-2020.</br>
+
+- People who have obtained a Schengen visa for between 2 and 3 years issued in 2020.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Casa3Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">CASA 3</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                     - Holders of a Schengen visa valid for between 3 and 5 years, issued by any Schengen State from 01-01-2020, which has expired or will expire in the next 3 months. </br>
+
+- Holders of a Schengen visa valid for between 2 and 3 years, issued by any Schengen State on or after 01-01-2021, which has expired or will expire within the next 3 months. 
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Rabat1Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">RABAT 1</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                      People applying for a visa - Normal process.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Rabat2Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">RABAT 2</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                     People who have held two Spanish visas in the last two years.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="Rabat3Visatype" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="familyModal"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="familyModal">RABAT 3</h6>
+
+            </div>
+            <div class="modal-body scam-body">
+                <span style="font-weight:500">
+                     People who have a single visa or other visas from Schengen countries.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+ 
+
+    </div>
+</div>
+
+    </main>
+    <!-- **************** MAIN CONTENT END **************** -->
+    <!-- =======================
+    Footer START -->
+    <footer class="bg-dark pt-5">
+        <div class="container">
+            <!-- Row START -->
+            <div class="row g-4">
+
+                <!-- Widget 1 START -->
+                <div class="col-lg-3">
+                    <!-- logo -->
+                    <a href="index">
+                        <img class="h-40px" src="/assets/images/logo.svg" alt="logo">
+                    </a>
+                    <h4 class="my-3 text-primary">BLS International</h4>
+                </div>
+                <!-- Widget 1 END -->
+                <!-- Widget 2 START -->
+                <div class="col-lg-8 ms-auto">
+                    <div class="row g-4">
+                        <!-- Link block -->
+
+                        <!-- Link block -->
+
+                        <!-- Link block -->
+
+                        <!-- Link block -->
+                    </div>
+                </div>
+                <!-- Widget 2 END -->
+
+            </div><!-- Row END -->
+
+            <!-- Divider -->
+            <hr class="mt-4 mb-0">
+
+            <!-- Bottom footer -->
+            <div class="row">
+                <div class="container">
+                    <div class="d-lg-flex justify-content-between align-items-center py-3 text-center text-lg-start">
+                        <!-- copyright text -->
+                        <div class="text-muted text-primary-hover">©BLS International 2026.</div>
+                        <!-- copyright links-->
+                        <div class="nav mt-2 mt-lg-0">
+                            <small class="list-inline-item me-0">V&nbsp;6.45</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- =======================
+    Footer END -->
+    <!-- Back to top -->
+    <div class="back-top"></div>
+    <!-- Bootstrap JS -->
+
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="scamModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="scamModalLabel">  <span style="font-weight:600;color:black">Ready to Leave?</span></h6>
+                    <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close">
+                    </button>
+
+                </div>
+                <div class="modal-body scam-body" style="color:black;font-size:medium">
+                    <span>
+                        Select &quot;Logout&quot; below if you are ready to end your current session.
+                    </span>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" type="button" onclick="OnLogoutSubmit();">Logout</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="/assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js?v=Bh8LHqeebiyiT0YD5V0-kJ90cboLJ5zbbepAVUEGxqI"></script>
+
+    <!-- Vendors -->
+    <script src="/assets/vendor/tiny-slider/tiny-slider.js?v=TUoRPxlDCbgCqz7qhneDUfttB5a74WlyYrm3FOjFZnU"></script>
+    <script src="/assets/vendor/purecounterjs/dist/purecounter_vanilla.js?v=faMnyiv1xv8mqVhNEZAf8nONW6FTf7T0o40mEeleNsQ"></script>
+    <script src="/assets/vendor/glightbox/js/glightbox.js?v=r0f52UVK7WXq6iGxjyhjV-Y2WjDtpwawIrQaoBtwqE4"></script>
+    <script src="/assets/vendor/flatpickr/js/flatpickr.min.js?v=AkQap91tDcS4YyQaZY2VV34UhSCxu2bDEIgXXXuf5Hg"></script>
+    <script src="/assets/vendor/choices/js/choices.min.js?v=GGLVnYaVIFDbccxWOhWJiXbdGgmWv7nDSer8VyCQSBk"></script>
+    <script src="/assets/vendor/jarallax/jarallax.min.js?v=051mEhTXV1pINFHbbB6peqpAeo2lEkRMtXVe59eo8Xo"></script>
+    <script src="/assets/vendor/jarallax/jarallax-video.min.js?v=hfysllUmwJ3on3niY5cibYd5iwOz1MZ-A5aKYxeD0fw"></script>
+
+    <!-- ThemeFunctions -->
+    <script src="/assets/js/functions.js?v=TbMKeJx-U07R1sXdRBqHpmGBu1Oh1AfWjFjDMY8fuOA"></script>
+    <script src="/js/site.js?v=KZhE6R9IutBwAcH2dhNWj-BkFRm9WXFHt-59TQi7rAo"></script>
+
+    <script>
+        var iframeOpenUrl = "";
+        var globalPopups = GetStack();
+        var globalCallBack = null;
+        var globalWindowSender = null;
+        function OnLanguageChange(lng) {
+
+            if (lng === 'en-US') {
+                return false;
+            }
+            ShowLoader();
+            $.ajax({
+                type: "POST",
+                url: "/MAR/account/ChangeLanguage?hdnLang=" +lng,
+                success: function (response) {
+                    HideLoader();
+                    if (response != "" && response != null && response.success === true) {
+                        window.location.href = window.location.href;
+                    }
+                },
+                error: function (response) {
+                    HideLoader();
+                    alert("error");
+                },
+            });
+              return false;
+        }
+        function OnLogout() {
+            $('#logoutModal').modal('show');
+        }
+        function OnLogoutSubmit() {
+            ShowLoader();
+            $.ajax({
+                type: "POST",
+                url: "/MAR/account/logout",
+                success: function (response) {
+                    HideLoader();
+                    if (response != "" && response != null && response.success === true) {
+                        window.location.href = "/";
+                    }
+                },
+                error: function (response) {
+                    HideLoader();
+                    alert(response.error);
+                },
+            });
+            return false;
+        }
+    </script>
+    
+    <script src="/assets/vendor/kendo/js/kendo.all.min.js?v=PO_iEpMMumS6ezVxpHt1IpXsBBwz5RAz-jXCrshdYLM"></script>
+
+
+<!-- Local mock navigation (must run AFTER page inline scripts) -->
+<script src="/assets/js/mock-recaptcha.js"></script>
+<script src="/assets/js/mock-nav.js"></script>
+</body>
+</html>
