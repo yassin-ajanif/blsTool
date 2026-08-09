@@ -22,7 +22,8 @@
   ],
   "host_permissions": [
     "<all_urls>",
-    "https://www.blsspainmorocco.net/*"
+    "https://www.blsspainmorocco.net/*",
+    "https://ipv4.icanhazip.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -33,6 +34,7 @@
         "https://www.blsspainmorocco.net/*"
       ],
       "js": [
+        "step-1-login/ip-overlay.js",
         "step-1-login/handle-too-many.js"
       ],
       "run_at": "document_idle"
