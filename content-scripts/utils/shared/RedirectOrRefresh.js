@@ -33,7 +33,7 @@ async function getRefreshErrorSettings() {
   } catch (error) {
     console.log('Could not fetch refresh error settings, using defaults:', error);
   }
-  return { enabled: true, refreshErrorMs: 1000 };n
+  return { enabled: true, refreshErrorMs: 1000 };
 }
 
 // Track if we already sent wipeCookies for this page
@@ -46,21 +46,15 @@ async function checkServerSideErrors() {
 
     // Check specifically for "Too Many" error first
     if (h1Text.includes('Too Many') || h1Text.includes('Temporarily Restricted')) {
-      // Only send once per page load
       if (!cookiesWiped) {
         console.log('Detected "Too Many" error. Sending message to wipe cookies...');
-
-        // Send message to content script to relay to background
         window.postMessage({
           type: 'FROM_PAGE_TO_CONTENT_SCRIPT',
           action: 'wipeCookies'
         }, '*');
-
-        cookiesWiped = true; // Mark as sent to prevent duplicates
+        cookiesWiped = true;
         console.log('Cookie wipe message sent - will not send again');
       }
-
-      // Return true to indicate error was handled, but don't refresh
       return true;
     }
 

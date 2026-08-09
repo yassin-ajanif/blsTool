@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Fanika BLS",
+  "version": "0.1.0",
+  "description": "Fanika clone — step 1: open BLS login, wipe all cookies on Too Many, reload",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Fanika — Open BLS Login",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "permissions": [
+    "tabs",
+    "cookies"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://www.blsspainmorocco.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.blsspainmorocco.net/*"
+      ],
+      "js": [
+        "step-1-login/handle-too-many.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

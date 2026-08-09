@@ -719,7 +719,6 @@ async function handleWipeCookies() {
   }
 }
 
-
 // ========================= WEB REQUEST HANDLERS =========================
 
 // Initialize the intercept manager to handle all web request monitoring
