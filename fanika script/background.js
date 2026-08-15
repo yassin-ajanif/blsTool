@@ -1,7 +1,8 @@
 /**
  * Fanika standalone background (MV3 service worker)
- * Step 1: fetch public IP, open login; wipe ALL cookies + reload on Too Many.
+ * Step 1: Chrome-only IPRoyal proxy, public IP overlay, Too Many → wipe + rotate + reload.
  */
+importScripts('load-env.js', 'proxy-rotation.js');
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
@@ -9,6 +10,22 @@ const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
 /** Cached public IPv4 from icanhazip */
 let cachedPublicIp = null;
 let ipFetchPromise = null;
+let proxyReady = null;
+
+async function ensureProxy() {
+  if (!proxyReady) {
+    proxyReady = (async () => {
+      await proxyRotation.init();
+      await proxyRotation.enable();
+      return proxyRotation.getConfig();
+    })().catch((err) => {
+      proxyReady = null;
+      console.error('[fanika] Proxy init failed:', err);
+      throw err;
+    });
+  }
+  return proxyReady;
+}
 
 async function fetchPublicIp() {
   if (ipFetchPromise) return ipFetchPromise;
@@ -32,15 +49,29 @@ async function fetchPublicIp() {
   return ipFetchPromise;
 }
 
+function invalidateIpCache() {
+  cachedPublicIp = null;
+  ipFetchPromise = null;
+}
+
 async function openLogin() {
-  // Resolve IP in background before opening the login page
+  try {
+    await ensureProxy();
+  } catch (err) {
+    console.warn('[fanika] Opening login without proxy:', err.message);
+  }
+
   try {
     await fetchPublicIp();
-  } catch (_) {
-    // Still open login even if IP lookup fails; overlay will show error/retry
-  }
+  } catch (_) {}
+
   chrome.tabs.create({ url: LOGIN_URL });
-  return { success: true, url: LOGIN_URL, ip: cachedPublicIp };
+  return {
+    success: true,
+    url: LOGIN_URL,
+    ip: cachedPublicIp,
+    proxy: proxyRotation.enabled ? proxyRotation.getConfig() : null
+  };
 }
 
 async function wipeAllCookies() {
@@ -66,19 +97,35 @@ async function wipeAllCookies() {
 
 async function wipeAllCookiesAndReload(tabId) {
   const count = await wipeAllCookies();
-  // Refresh IP after cookie wipe (egress may be unchanged, but keep cache warm)
-  ipFetchPromise = null;
+
+  // On-demand IP rotate (new sticky session) — not TTL-based
+  let proxy = null;
+  try {
+    await ensureProxy();
+    proxy = await proxyRotation.rotate();
+  } catch (err) {
+    console.warn('[fanika] Proxy rotate failed:', err.message);
+  }
+
+  invalidateIpCache();
   try {
     await fetchPublicIp();
   } catch (_) {}
+
   if (tabId != null) {
     await chrome.tabs.reload(tabId);
   }
-  console.log(`[fanika] Wiped ${count} cookies and reloaded tab ${tabId}`);
-  return { success: true, count, reloaded: tabId != null, ip: cachedPublicIp };
+
+  console.log(`[fanika] Wiped ${count} cookies, rotated proxy, reloaded tab ${tabId}`);
+  return {
+    success: true,
+    count,
+    reloaded: tabId != null,
+    ip: cachedPublicIp,
+    proxy
+  };
 }
 
-// Toolbar icon → fetch IP then open login
 chrome.action.onClicked.addListener(() => {
   openLogin();
 });
@@ -104,6 +151,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (action === 'rotateProxy') {
+    ensureProxy()
+      .then(() => proxyRotation.rotate())
+      .then((proxy) => {
+        invalidateIpCache();
+        return fetchPublicIp()
+          .then((ip) => ({ success: true, proxy, ip }))
+          .catch(() => ({ success: true, proxy, ip: null }));
+      })
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'enableProxy') {
+    ensureProxy()
+      .then((proxy) => sendResponse({ success: true, proxy }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'disableProxy') {
+    proxyRotation.disable()
+      .then(() => {
+        proxyReady = null;
+        sendResponse({ success: true });
+      })
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   if (action === 'wipeAllCookiesAndReload') {
     wipeAllCookiesAndReload(sender?.tab?.id)
       .then(sendResponse)
@@ -115,7 +193,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
-// Warm IP cache when the service worker starts
-fetchPublicIp().catch(() => {});
+ensureProxy()
+  .then(() => fetchPublicIp())
+  .catch(() => {});
 
-console.log('[fanika] Background ready — click the icon to open login');
+console.log('[fanika] Background ready — click the icon to open login (Chrome proxy only)');

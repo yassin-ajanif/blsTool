@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fanika BLS",
   "version": "0.1.0",
-  "description": "Fanika clone — step 1: open BLS login, wipe all cookies on Too Many, reload",
+  "description": "Fanika clone — step 1: Chrome IPRoyal proxy, login, Too Many wipe+rotate+reload",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -18,12 +18,17 @@
   },
   "permissions": [
     "tabs",
-    "cookies"
+    "cookies",
+    "proxy",
+    "webRequest",
+    "webRequestAuthProvider"
   ],
   "host_permissions": [
     "<all_urls>",
     "https://www.blsspainmorocco.net/*",
-    "https://ipv4.icanhazip.com/*"
+    "https://ipv4.icanhazip.com/*",
+    "http://geo.iproyal.com/*",
+    "https://geo.iproyal.com/*"
   ],
   "background": {
     "service_worker": "background.js"
