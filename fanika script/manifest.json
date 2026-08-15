@@ -9,19 +9,22 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Fanika — Open BLS Login",
+    "default_title": "Fanika — Rotate proxies",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
+  "options_page": "options.html",
   "permissions": [
     "tabs",
     "cookies",
     "proxy",
     "webRequest",
-    "webRequestAuthProvider"
+    "webRequestAuthProvider",
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>",

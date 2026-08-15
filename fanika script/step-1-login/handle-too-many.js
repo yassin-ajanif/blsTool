@@ -1,6 +1,6 @@
 /**
- * Step 1 — Too Many handler (content script)
- * On "Too Many" / "Temporarily Restricted": ask background to wipe ALL cookies + reload.
+ * Step 1 — Too Many handler
+ * clear cookies → rotate until IP changes → redirect to login
  */
 (function () {
   if (window.__fanikaStep1TooManyInstalled) return;
@@ -13,22 +13,34 @@
     return h1Text.includes('Too Many') || h1Text.includes('Temporarily Restricted');
   }
 
-  function requestWipeAllAndReload() {
+  function requestHandleTooMany() {
     if (handled) return;
     handled = true;
-    console.log('[fanika/step-1-login] Too Many detected — wiping all browser cookies and reloading');
-    chrome.runtime.sendMessage({ action: 'wipeAllCookiesAndReload' }, (response) => {
+    console.log('[fanika/step-1-login] Too Many — LoginSubmit: 3 wipe+rotate retries, then login');
+    chrome.runtime.sendMessage({
+      action: 'debugLog',
+      event: 'page.tooMany.detected',
+      data: { url: location.href, h1: document.querySelector('h1')?.textContent?.trim() }
+    });
+    chrome.runtime.sendMessage({
+      action: 'handleTooMany',
+      pageUrl: location.href
+    }, (response) => {
       if (chrome.runtime.lastError) {
         console.error('[fanika/step-1-login]', chrome.runtime.lastError.message);
         handled = false;
         return;
       }
-      console.log('[fanika/step-1-login] wipe response:', response);
+      console.log('[fanika/step-1-login] Too Many response:', response);
+      // Same IP — do not treat as done; allow another check after a pause
+      if (response && response.action === 'ipUnchanged') {
+        setTimeout(() => { handled = false; }, 2000);
+      }
     });
   }
 
   function check() {
-    if (isTooManyPage()) requestWipeAllAndReload();
+    if (isTooManyPage()) requestHandleTooMany();
   }
 
   if (document.readyState === 'loading') {

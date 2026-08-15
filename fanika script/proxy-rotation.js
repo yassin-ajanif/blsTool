@@ -130,6 +130,9 @@
       });
 
       this.enabled = true;
+      if (typeof debugLog === 'function') {
+        debugLog('proxy.enable', { host, port, session: this.sessionId });
+      }
       console.log('[fanika/proxy] Enabled', host + ':' + port, 'session=', this.sessionId);
       return this.getConfig();
     }
@@ -148,6 +151,9 @@
     async rotate() {
       if (!this.env) await this.init();
       this.sessionId = randomSessionId();
+      if (typeof debugLog === 'function') {
+        debugLog('proxy.rotate.session', { sessionId: this.sessionId });
+      }
       console.log('[fanika/proxy] Rotating session →', this.sessionId);
       await this.enable();
       return this.getConfig();

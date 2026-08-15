@@ -1,6 +1,5 @@
 /**
- * Step 1 — Public IP overlay on targeted BLS pages
- * Reads IP from background (fetched via https://ipv4.icanhazip.com/).
+ * Step 1 — Public IP overlay + Rotate button
  */
 (function () {
   if (window.__fanikaIpOverlayInstalled) return;
@@ -15,7 +14,6 @@
     el = document.createElement('div');
     el.id = OVERLAY_ID;
     el.setAttribute('data-fanika', 'ip-overlay');
-    el.textContent = 'IP: …';
     el.style.cssText = [
       'position:fixed',
       'top:12px',
@@ -28,24 +26,57 @@
       'border:1px solid #2e7d32',
       'border-radius:6px',
       'box-shadow:0 2px 8px rgba(0,0,0,0.18)',
-      'pointer-events:none',
+      'pointer-events:auto',
       'user-select:none'
     ].join(';');
 
+    const label = document.createElement('div');
+    label.id = OVERLAY_ID + '-label';
+    label.textContent = 'IP: …';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Rotate';
+    btn.style.cssText = 'margin-top:6px;width:100%;cursor:pointer;font:600 12px system-ui';
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      label.textContent = 'IP: rotating…';
+      chrome.runtime.sendMessage({
+        action: 'debugLog',
+        event: 'overlay.rotate.click'
+      });
+      chrome.runtime.sendMessage({ action: 'rotateProxy' }, (response) => {
+        btn.disabled = false;
+        if (chrome.runtime.lastError) {
+          label.textContent = 'IP: ' + chrome.runtime.lastError.message;
+          return;
+        }
+        if (response?.changed && response.ip) {
+          label.textContent = 'IP: ' + response.ip + ' (changed)';
+        } else if (response?.ip) {
+          label.textContent = 'IP: ' + response.ip + ' (same — kept rotating)';
+        } else {
+          label.textContent = 'IP: ' + (response?.error || 'rotate failed');
+        }
+      });
+    });
+
+    el.appendChild(label);
+    el.appendChild(btn);
     (document.documentElement || document.body).appendChild(el);
     return el;
   }
 
   function setOverlayText(text) {
-    const el = ensureOverlay();
-    el.textContent = text;
+    ensureOverlay();
+    const label = document.getElementById(OVERLAY_ID + '-label');
+    if (label) label.textContent = text;
   }
 
   function requestIp() {
     chrome.runtime.sendMessage({ action: 'getPublicIp' }, (response) => {
       if (chrome.runtime.lastError) {
         setOverlayText('IP: unavailable');
-        console.warn('[fanika/ip-overlay]', chrome.runtime.lastError.message);
         return;
       }
       if (response?.success && response.ip) {

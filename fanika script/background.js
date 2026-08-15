@@ -1,25 +1,27 @@
 /**
- * Fanika standalone background (MV3 service worker)
- * Step 1: Chrome-only IPRoyal proxy, public IP overlay, Too Many → wipe + rotate + reload.
+ * Fanika standalone background
+ * Too Many → wipe cookies, rotate until IP changes, then go to login.
  */
-importScripts('load-env.js', 'proxy-rotation.js');
+importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js');
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
+const LOGIN_SUBMIT_MAX_TRIES = 3;
+const TRY_STORE_KEY = 'fanikaLoginSubmitTries';
 
-/** Cached public IPv4 from icanhazip */
 let cachedPublicIp = null;
 let ipFetchPromise = null;
 let proxyReady = null;
 
 async function ensureProxy() {
+  await debugLog('proxy.ensure.start');
   if (!proxyReady) {
-    proxyReady = (async () => {
-      await proxyRotation.init();
-      await proxyRotation.enable();
-      return proxyRotation.getConfig();
-    })().catch((err) => {
+    proxyReady = rotateProxies.start().then(async (started) => {
+      await debugLog('proxy.ensure.ok', started);
+      return started;
+    }).catch(async (err) => {
       proxyReady = null;
+      await debugLog('proxy.ensure.fail', { error: err.message });
       console.error('[fanika] Proxy init failed:', err);
       throw err;
     });
@@ -37,11 +39,13 @@ async function fetchPublicIp() {
       const text = (await res.text()).trim();
       if (!text) throw new Error('Empty IP response');
       cachedPublicIp = text;
-      console.log('[fanika] Public IP:', cachedPublicIp);
+      rotateProxies.lastIp = text;
+      await debugLog('ip.fetch.ok', { ip: cachedPublicIp });
       return cachedPublicIp;
     } catch (err) {
       console.error('[fanika] IP lookup failed:', err);
       ipFetchPromise = null;
+      await debugLog('ip.fetch.fail', { error: err.message });
       throw err;
     }
   })();
@@ -55,10 +59,12 @@ function invalidateIpCache() {
 }
 
 async function openLogin() {
+  await debugLog('login.open.start', { url: LOGIN_URL });
   try {
     await ensureProxy();
   } catch (err) {
     console.warn('[fanika] Opening login without proxy:', err.message);
+    await debugLog('login.open.proxySkip', { error: err.message });
   }
 
   try {
@@ -66,12 +72,14 @@ async function openLogin() {
   } catch (_) {}
 
   chrome.tabs.create({ url: LOGIN_URL });
-  return {
+  const result = {
     success: true,
     url: LOGIN_URL,
     ip: cachedPublicIp,
-    proxy: proxyRotation.enabled ? proxyRotation.getConfig() : null
+    proxy: rotateProxies.getStatus().proxy
   };
+  await debugLog('login.open.done', result);
+  return result;
 }
 
 async function wipeAllCookies() {
@@ -92,46 +100,188 @@ async function wipeAllCookies() {
       console.warn('[fanika] cookie remove failed:', cookie.name, err.message);
     }
   }
+  await debugLog('cookies.wipe.done', { count });
   return count;
 }
 
-async function wipeAllCookiesAndReload(tabId) {
-  const count = await wipeAllCookies();
+function isLoginSubmitUrl(url) {
+  return String(url || '').toLowerCase().includes('/account/loginsubmit');
+}
 
-  // On-demand IP rotate (new sticky session) — not TTL-based
-  let proxy = null;
+function tryStore() {
+  return chrome.storage.session || chrome.storage.local;
+}
+
+async function getLoginSubmitTry(tabId) {
+  const stored = await tryStore().get(TRY_STORE_KEY);
+  const map = stored[TRY_STORE_KEY] || {};
+  return Number(map[tabId]) || 0;
+}
+
+async function setLoginSubmitTry(tabId, count) {
+  const store = tryStore();
+  const stored = await store.get(TRY_STORE_KEY);
+  const map = { ...(stored[TRY_STORE_KEY] || {}) };
+  if (count <= 0) delete map[tabId];
+  else map[tabId] = count;
+  await store.set({ [TRY_STORE_KEY]: map });
+}
+
+async function goToLogin(tabId) {
+  if (tabId != null) await setLoginSubmitTry(tabId, 0);
+  if (tabId != null) {
+    await chrome.tabs.update(tabId, { url: LOGIN_URL });
+  } else {
+    await chrome.tabs.create({ url: LOGIN_URL });
+  }
+}
+
+async function waitForNewProxy() {
   try {
     await ensureProxy();
-    proxy = await proxyRotation.rotate();
+    const rotated = await rotateProxies.rotateUntilIpChanges();
+    if (rotated.ip) cachedPublicIp = rotated.ip;
+    await debugLog('proxy.waitNew', {
+      changed: rotated.changed,
+      previousIp: rotated.previousIp,
+      ip: rotated.ip,
+      attempts: rotated.attempts,
+      error: rotated.error || null
+    });
+    return rotated;
   } catch (err) {
-    console.warn('[fanika] Proxy rotate failed:', err.message);
+    await debugLog('tooMany.rotateFail', { error: err.message });
+    return { changed: false, error: err.message };
+  }
+}
+
+async function handleTooMany(tabId, pageUrl) {
+  const url = pageUrl || '';
+  await debugLog('tooMany.start', { tabId, url });
+
+  if (isLoginSubmitUrl(url)) {
+    const used = await getLoginSubmitTry(tabId);
+    const next = used + 1;
+
+    if (next <= LOGIN_SUBMIT_MAX_TRIES) {
+      const cookieCount = await wipeAllCookies();
+      const rotated = await waitForNewProxy();
+      if (!rotated.changed) {
+        await debugLog('loginSubmit.skipReload', {
+          reason: 'same-proxy',
+          try: used,
+          ip: rotated.ip,
+          cookieCount
+        });
+        return {
+          success: false,
+          action: 'ipUnchanged',
+          try: used,
+          ip: rotated.ip,
+          error: rotated.error || 'Same proxy — not reloading (avoid ban)'
+        };
+      }
+      await setLoginSubmitTry(tabId, next);
+      await debugLog('loginSubmit.retry', {
+        try: next,
+        max: LOGIN_SUBMIT_MAX_TRIES,
+        cookieCount,
+        previousIp: rotated.previousIp,
+        ip: rotated.ip,
+        sessionId: rotated.sessionId
+      });
+      if (tabId != null) {
+        await chrome.tabs.reload(tabId);
+      }
+      return {
+        success: true,
+        action: 'retryLoginSubmit',
+        try: next,
+        max: LOGIN_SUBMIT_MAX_TRIES,
+        previousIp: rotated.previousIp,
+        ip: rotated.ip
+      };
+    }
+
+    await debugLog('loginSubmit.giveUpGoLogin', { tries: used, tabId });
+    const cookieCount = await wipeAllCookies();
+    const rotated = await waitForNewProxy();
+    if (!rotated.changed) {
+      await debugLog('loginSubmit.skipGoLogin', { reason: 'same-proxy', ip: rotated.ip, cookieCount });
+      return {
+        success: false,
+        action: 'ipUnchanged',
+        tries: LOGIN_SUBMIT_MAX_TRIES,
+        ip: rotated.ip,
+        error: 'Same proxy — not opening login (avoid ban)'
+      };
+    }
+    await goToLogin(tabId);
+    return {
+      success: true,
+      action: 'goLogin',
+      tries: LOGIN_SUBMIT_MAX_TRIES,
+      cookiesWiped: cookieCount,
+      previousIp: rotated.previousIp,
+      ip: rotated.ip,
+      redirected: LOGIN_URL
+    };
   }
 
-  invalidateIpCache();
-  try {
-    await fetchPublicIp();
-  } catch (_) {}
-
-  if (tabId != null) {
-    await chrome.tabs.reload(tabId);
+  const count = await wipeAllCookies();
+  await debugLog('tooMany.cookiesWiped', { count });
+  const rotated = await waitForNewProxy();
+  if (!rotated.changed) {
+    await debugLog('tooMany.skipRedirect', { reason: 'same-proxy', ip: rotated.ip });
+    return {
+      success: false,
+      action: 'ipUnchanged',
+      count,
+      ip: rotated.ip,
+      error: 'Same proxy — not opening login (avoid ban)'
+    };
   }
-
-  console.log(`[fanika] Wiped ${count} cookies, rotated proxy, reloaded tab ${tabId}`);
+  await goToLogin(tabId);
+  await debugLog('tooMany.redirect', { url: LOGIN_URL, ip: rotated.ip, tabId });
   return {
     success: true,
+    action: 'goLogin',
     count,
-    reloaded: tabId != null,
-    ip: cachedPublicIp,
-    proxy
+    redirected: LOGIN_URL,
+    previousIp: rotated.previousIp,
+    ip: rotated.ip
   };
 }
 
-chrome.action.onClicked.addListener(() => {
-  openLogin();
-});
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const action = message?.action || message?.type;
+  debugLog('message.in', {
+    action,
+    tabId: sender?.tab?.id,
+    url: sender?.tab?.url,
+    from: sender?.url
+  });
+
+  if (action === 'debugLog') {
+    debugLog(message.event || 'client.log', message.data)
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'getDebugLog') {
+    getDebugLog()
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'clearDebugLog') {
+    clearDebugLog()
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
 
   if (action === 'openStep1Login' || action === 'openLogin') {
     openLogin()
@@ -151,29 +301,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (action === 'rotateProxy') {
+  if (action === 'rotateProxy' || action === 'rotateProxies') {
     ensureProxy()
-      .then(() => proxyRotation.rotate())
-      .then((proxy) => {
-        invalidateIpCache();
-        return fetchPublicIp()
-          .then((ip) => ({ success: true, proxy, ip }))
-          .catch(() => ({ success: true, proxy, ip: null }));
+      .then(() => rotateProxies.rotateUntilIpChanges())
+      .then(async (result) => {
+        if (result.ip) cachedPublicIp = result.ip;
+        await debugLog('proxy.rotateUntilDone', result);
+        sendResponse(result);
       })
-      .then(sendResponse)
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
+  if (action === 'rotateProxiesStatus') {
+    sendResponse(rotateProxies.getStatus());
+    return false;
+  }
+
   if (action === 'enableProxy') {
     ensureProxy()
-      .then((proxy) => sendResponse({ success: true, proxy }))
+      .then((started) => sendResponse({ success: true, proxy: started.proxy || started }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
   if (action === 'disableProxy') {
-    proxyRotation.disable()
+    rotateProxies.stop()
       .then(() => {
         proxyReady = null;
         sendResponse({ success: true });
@@ -182,14 +335,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (action === 'wipeAllCookiesAndReload') {
-    wipeAllCookiesAndReload(sender?.tab?.id)
+  if (action === 'wipeAllCookiesAndReload' || action === 'handleTooMany') {
+    handleTooMany(sender?.tab?.id, message.pageUrl || sender?.tab?.url)
       .then(sendResponse)
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
   sendResponse({ success: false, error: `Unknown action: ${action}` });
+  debugLog('message.unknown', { action });
   return false;
 });
 
@@ -197,4 +351,4 @@ ensureProxy()
   .then(() => fetchPublicIp())
   .catch(() => {});
 
-console.log('[fanika] Background ready — click the icon to open login (Chrome proxy only)');
+console.log('[fanika] Background ready');
