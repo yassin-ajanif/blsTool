@@ -1,40 +1,210 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Fanika — Debug log</title>
+  <title>Fanika — Options</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font: 14px/1.4 system-ui, sans-serif;
+      font: 14px/1.45 system-ui, sans-serif;
       margin: 0;
-      padding: 16px;
-      background: #111;
-      color: #eee;
+      background: #f4f6f8;
+      color: #111;
     }
-    h1 { font-size: 18px; margin: 0 0 8px; }
-    p { color: #aaa; margin: 0 0 12px; }
-    textarea {
+    header {
+      background: #1b5e20;
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { margin: 0; font-size: 18px; }
+    nav {
+      display: flex;
+      gap: 4px;
+      padding: 10px 20px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+    nav button {
+      border: none;
+      background: transparent;
+      padding: 8px 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    nav button.active { background: #e8f5e9; color: #1b5e20; font-weight: 600; }
+    main { padding: 20px; max-width: 960px; margin: 0 auto; }
+    section { display: none; }
+    section.active { display: block; }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field { flex: 1 1 200px; margin-bottom: 10px; }
+    label { display: block; font-size: 12px; color: #555; margin-bottom: 4px; }
+    input, select, textarea {
       width: 100%;
-      height: calc(100vh - 120px);
-      box-sizing: border-box;
-      font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font: inherit;
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+    .btn-primary { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+    .btn-danger { background: #c62828; color: #fff; border-color: #c62828; }
+    .client-list { list-style: none; padding: 0; margin: 0; }
+    .client-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      background: #fafafa;
+    }
+    .client-item.selected { border-color: #2e7d32; background: #e8f5e9; }
+    .client-item .meta { flex: 1; font-size: 13px; }
+    .client-item .name { font-weight: 600; }
+    .hint { color: #666; font-size: 12px; margin-top: 8px; }
+    #debug-log {
+      width: 100%;
+      height: 420px;
+      font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
       background: #1c1c1c;
       color: #d8f8d8;
       border: 1px solid #333;
       padding: 10px;
-      white-space: pre;
     }
-    button { margin-right: 8px; padding: 8px 12px; cursor: pointer; }
+    .settings-grid { display: grid; gap: 8px; }
+    .settings-row {
+      display: grid;
+      grid-template-columns: 24px 1fr 80px 24px;
+      gap: 8px;
+      align-items: center;
+    }
+    .status { margin-top: 10px; font-size: 13px; color: #1565c0; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>Fanika debug log</h1>
-  <p>One log. New actions append here — nothing is downloaded.</p>
-  <div>
-    <button id="refresh">Refresh</button>
-    <button id="clear">Clear log</button>
-  </div>
-  <textarea id="log" readonly spellcheck="false"></textarea>
-  <script src="options.js"></script>
+  <header>
+    <h1>Fanika BLS</h1>
+    <button type="button" class="btn btn-primary" id="launch-btn">Launch selected client</button>
+  </header>
+
+  <nav>
+    <button type="button" class="tab active" data-tab="clients">Clients</button>
+    <button type="button" class="tab" data-tab="settings">Settings</button>
+    <button type="button" class="tab" data-tab="debug">Debug log</button>
+  </nav>
+
+  <main>
+    <section id="tab-clients" class="active">
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <button type="button" class="btn btn-primary" id="add-client-btn">Add client</button>
+        </div>
+        <ul id="clients-list" class="client-list"></ul>
+        <p class="hint">Select a client (click row), then Launch or use the popup.</p>
+      </div>
+
+      <div id="client-form-wrap" class="card hidden">
+        <h3 id="form-title">Add client</h3>
+        <form id="client-form">
+          <input type="hidden" id="client-id">
+          <div class="row">
+            <div class="field"><label>Name *</label><input id="client-name" required></div>
+            <div class="field"><label>Email *</label><input id="client-email" type="email" required></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>BLS Password *</label><input id="client-password" required></div>
+            <div class="field"><label>Applicants count</label><input id="client-applicants" type="number" min="1" max="6" value="1"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Category *</label>
+              <select id="client-category" required></select>
+            </div>
+            <div class="field"><label>Location *</label>
+              <select id="client-location" required></select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Visa type *</label>
+              <select id="client-visa-type" required></select>
+            </div>
+            <div class="field"><label>Visa subtype *</label>
+              <select id="client-visa-subtype" required></select>
+            </div>
+          </div>
+          <div class="row">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn" id="cancel-form-btn">Cancel</button>
+          </div>
+        </form>
+        <p id="form-status" class="status"></p>
+      </div>
+    </section>
+
+    <section id="tab-settings">
+      <div class="card">
+        <h3>Auto-submit</h3>
+        <div class="settings-grid">
+          <div class="settings-row">
+            <input type="checkbox" id="submit-login" checked>
+            <label for="submit-login">Login (email → Verify)</label>
+            <input type="number" id="submit-login-ms" min="0" value="0">
+            <span>ms</span>
+          </div>
+          <div class="settings-row">
+            <input type="checkbox" id="submit-captcha" checked>
+            <label for="submit-captcha">Login captcha</label>
+            <input type="number" id="submit-captcha-ms" min="0" value="0">
+            <span>ms</span>
+          </div>
+          <div class="settings-row">
+            <input type="checkbox" id="submit-visatype" checked>
+            <label for="submit-visatype">Visa type</label>
+            <input type="number" id="submit-visatype-ms" min="0" value="0">
+            <span>ms</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="field"><label>Redirect delay (home → new appointment) ms</label>
+          <input type="number" id="redirect-ms" min="0" value="500"></div>
+        <button type="button" class="btn btn-primary" id="save-settings-btn">Save settings</button>
+        <p id="settings-status" class="status"></p>
+        <p class="hint" style="margin:8px 0 0;color:#666;font-size:12px;">
+          Captcha: always TrueCaptcha, credentials are read from <code>fanika script/.env</code>.
+        </p>
+      </div>
+    </section>
+
+    <section id="tab-debug">
+      <div class="card">
+        <button type="button" class="btn" id="refresh-log">Refresh</button>
+        <button type="button" class="btn btn-danger" id="clear-log">Clear log</button>
+        <textarea id="debug-log" readonly spellcheck="false"></textarea>
+      </div>
+    </section>
+  </main>
+
+  <script src="lib/visa-config.js"></script>
+  <script src="lib/client-manager.js"></script>
+  <script src="options-app.js"></script>
 </body>
 </html>

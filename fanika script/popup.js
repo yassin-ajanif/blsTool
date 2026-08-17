@@ -4,13 +4,9 @@ function setStatus(text, cls) {
   el.textContent = text;
 }
 
-function applyResult(data) {
-  if (data?.ip) document.getElementById('ip').textContent = data.ip;
-}
-
-function send(action) {
+function send(action, extra) {
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ action }, (res) => {
+    chrome.runtime.sendMessage({ action, ...extra }, (res) => {
       if (chrome.runtime.lastError) {
         resolve({ success: false, error: chrome.runtime.lastError.message });
         return;
@@ -22,13 +18,13 @@ function send(action) {
 
 async function refresh() {
   const ip = await send('getPublicIp');
-  applyResult(ip);
-}
+  if (ip?.ip) document.getElementById('ip').textContent = ip.ip;
 
-/* --- Start tunnel / Rotate — DISABLED ---
-document.getElementById('start').addEventListener('click', async () => { ... });
-document.getElementById('rotate').addEventListener('click', async () => { ... });
---- */
+  const stored = await chrome.storage.local.get(['fanikaClients', 'fanikaSelectedClientId']);
+  const clients = stored.fanikaClients || [];
+  const sel = clients.find((c) => c.id === stored.fanikaSelectedClientId) || clients[0];
+  document.getElementById('client').textContent = sel ? sel.name : '(no client — open Options)';
+}
 
 document.getElementById('login').addEventListener('click', async () => {
   setStatus('Opening login (wipe cookies)…');
@@ -40,7 +36,21 @@ document.getElementById('login').addEventListener('click', async () => {
   setStatus('Login opened — cookies wiped: ' + (res.cookiesWiped ?? '?'), 'ok');
 });
 
-document.getElementById('openLog').addEventListener('click', () => {
+document.getElementById('launch').addEventListener('click', async () => {
+  const stored = await chrome.storage.local.get(['fanikaClients', 'fanikaSelectedClientId']);
+  const clients = stored.fanikaClients || [];
+  const sel = clients.find((c) => c.id === stored.fanikaSelectedClientId) || clients[0];
+  if (!sel) {
+    setStatus('Add a client in Options first', 'err');
+    chrome.runtime.openOptionsPage();
+    return;
+  }
+  setStatus('Launching ' + sel.name + '…');
+  chrome.tabs.create({ url: 'https://www.blsspainmorocco.net/MAR/account/login' });
+  setStatus('Opened login for ' + sel.name, 'ok');
+});
+
+document.getElementById('options').addEventListener('click', () => {
   chrome.runtime.openOptionsPage();
 });
 

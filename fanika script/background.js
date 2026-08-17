@@ -17,6 +17,36 @@ const ROTATE_IP_RETRY_MS = 1500;
 let cachedPublicIp = null;
 let ipFetchPromise = null;
 
+async function ensureTrueCaptchaFromEnv() {
+  // Avoid reloading env repeatedly.
+  const current = await chrome.storage.local.get(['fanikaSettings']);
+  const existing = current?.fanikaSettings?.captchaService?.truecaptcha || {};
+  if (existing?.userId && existing?.apiKey) return;
+
+  try {
+    const env = await loadEnv('.env');
+    const userId = env.USER_ID || env.USERID || env.TRUECAPTCHA_USER_ID || env.TRUECAPTCHA_USERID || '';
+    const apiKey = env.API_KEY || env.APIKEY || env.TRUECAPTCHA_API_KEY || env.TRUECAPTCHA_APIKEY || '';
+    if (!userId || !apiKey) {
+      await debugLog('truecaptcha.env.missing', { hasUserId: Boolean(userId), hasApiKey: Boolean(apiKey) });
+      return;
+    }
+
+    const next = current?.fanikaSettings || {};
+    next.captchaService = {
+      ...(next.captchaService || {}),
+      activeService: 'truecaptcha',
+      nocaptchaai: { enabled: false, apiKey: '' },
+      servercaptcha: { enabled: false, endpoint: '' },
+      truecaptcha: { enabled: true, userId, apiKey }
+    };
+    await chrome.storage.local.set({ fanikaSettings: next });
+    await debugLog('truecaptcha.env.loaded', { userIdPresent: Boolean(userId), apiKeyPresent: Boolean(apiKey) });
+  } catch (err) {
+    await debugLog('truecaptcha.env.load.fail', { error: err.message });
+  }
+}
+
 /** Drop leftover chrome.proxy so FoxyProxy / gost can own the tunnel. */
 async function releaseChromeProxy() {
   try {
@@ -285,6 +315,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     from: sender?.url
   });
 
+  if (action === 'ensureTrueCaptchaFromEnv') {
+    ensureTrueCaptchaFromEnv()
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   if (action === 'debugLog') {
     debugLog(message.event || 'client.log', message.data)
       .then(sendResponse)
@@ -388,8 +425,83 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
+function isVisaTypeUrl(url) {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes('blsspainmorocco.net') &&
+    (lower.includes('/appointment/visatype') ||
+      (lower.includes('/appointment/newappointment') && !lower.includes('captcha')))
+  );
+}
+
+async function injectVisaTypeOnTab(tabId) {
+  const helpers = `
+    if (!window.__fanikaPageHelpersInstalled) {
+      window.__fanikaPageHelpersInstalled = true;
+      window.getFanikaData = function () {
+        return new Promise(function (resolve, reject) {
+          var id = Date.now() + Math.random();
+          function handler(e) {
+            if (!e.data || e.data.type !== 'FANIKA_DATA_RESPONSE' || e.data.requestId !== id) return;
+            window.removeEventListener('message', handler);
+            if (e.data.error) reject(new Error(e.data.error));
+            else resolve(e.data.data);
+          }
+          window.addEventListener('message', handler);
+          window.postMessage({ type: 'FANIKA_REQUEST_DATA', requestId: id }, '*');
+        });
+      };
+      window.fanikaDebug = function (event, data) {
+        window.postMessage({ type: 'FANIKA_DEBUG', event: event, data: data }, '*');
+      };
+      window.fanikaOverlay = function (text, phase) {
+        window.postMessage({ type: 'FANIKA_OVERLAY', text: text, phase: phase }, '*');
+      };
+    }
+  `;
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      await chrome.tabs.sendMessage(tabId, { action: 'injectVisaType' });
+      await debugLog('visaType.inject.sent', { tabId, attempt });
+      return;
+    } catch (err) {
+      await debugLog('visaType.inject.retry', { tabId, attempt, error: err.message });
+      if (attempt === 4) break;
+      await sleep(400 * attempt);
+    }
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tabId, { action: 'injectScript', script: helpers, path: 'page-helpers' });
+    const scripts = ['shared/countdown.js', 'step-4-visa-type/visa-type-page.js'];
+    for (const path of scripts) {
+      const res = await fetch(chrome.runtime.getURL(path));
+      if (!res.ok) continue;
+      await chrome.tabs.sendMessage(tabId, {
+        action: 'injectScript',
+        script: await res.text(),
+        path
+      });
+    }
+    await debugLog('visaType.inject.fallback', { tabId });
+  } catch (err) {
+    await debugLog('visaType.inject.fail', { tabId, error: err.message });
+  }
+}
+
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.status !== 'complete') return;
+  if (!isVisaTypeUrl(tab.url)) return;
+  injectVisaTypeOnTab(tabId);
+});
+
 releaseChromeProxy()
   .then(() => fetchPublicIp(true))
   .catch(() => {});
 
 console.log('[fanika] Ready — Too Many: wipe×3 then gost rotate @ :9999');
+
+// Best-effort early load: prepares TrueCaptcha creds for content scripts.
+ensureTrueCaptchaFromEnv().catch(() => {});

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.1.0",
-  "description": "Fanika — BLS login cookie wipe (proxy via gost + FoxyProxy)",
+  "version": "0.2.5",
+  "description": "Fanika — BLS booking bot (login, captcha, visa type) + cookie wipe / gost rotate",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",
@@ -24,11 +24,11 @@
   "host_permissions": [
     "<all_urls>",
     "https://www.blsspainmorocco.net/*",
+    "https://blsspainmorocco.net/*",
     "https://ipv4.icanhazip.com/*",
     "http://127.0.0.1:9999/*",
     "http://localhost:9999/*",
-    "http://geo.iproyal.com/*",
-    "https://geo.iproyal.com/*"
+    "https://api.apitruecaptcha.org/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -36,14 +36,46 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.blsspainmorocco.net/*"
+        "https://www.blsspainmorocco.net/*",
+        "https://blsspainmorocco.net/*"
       ],
       "js": [
+        "shared/fanika-data.js",
+        "shared/page-guard.js",
+        "shared/page-inject.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.blsspainmorocco.net/*",
+        "https://blsspainmorocco.net/*"
+      ],
+      "js": [
+        "shared/dom.js",
+        "shared/countdown.js",
+        "shared/captcha-solver.js",
         "step-1-login/ip-overlay.js",
+        "step-1-login/handle-too-many.js",
         "step-1-login/login-cookie-wipe.js",
-        "step-1-login/handle-too-many.js"
+        "step-1-login/login-page.js",
+        "step-2-login-captcha/login-captcha-page.js",
+        "step-3-appointment-captcha/appointment-captcha-page.js",
+        "step-4-visa-type/redirect-to-appointment.js"
       ],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "shared/countdown.js",
+        "step-4-visa-type/visa-type-page.js"
+      ],
+      "matches": [
+        "https://www.blsspainmorocco.net/*",
+        "https://blsspainmorocco.net/*"
+      ]
     }
   ]
 }

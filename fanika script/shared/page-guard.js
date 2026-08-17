@@ -1,0 +1,45 @@
+/**
+ * Page detection (case-insensitive) — Trump PageManager equivalent.
+ */
+(function () {
+  function path() {
+    return (location.pathname || '').toLowerCase();
+  }
+
+  window.fanikaPage = {
+    path,
+    isLogin() {
+      const p = path();
+      return p.includes('/account/login') && !p.includes('loginsubmit') && !p.includes('captcha');
+    },
+    isLoginCaptcha() {
+      return path().includes('logincaptcha');
+    },
+    hasCaptchaUi() {
+      return !!(
+        document.querySelector('#captcha-main-div') ||
+        document.querySelector('.box-label') ||
+        document.querySelector('.captcha-img')
+      );
+    },
+    isAppointmentCaptcha() {
+      const p = path();
+      if (p.includes('appointmentcaptcha')) return true;
+      return p.includes('/appointment/newappointment') && this.hasCaptchaUi();
+    },
+    isVisaType() {
+      const p = path();
+      if (p.includes('/appointment/visatype')) return true;
+      return p.includes('/appointment/newappointment') && !this.hasCaptchaUi();
+    },
+    shouldGoNewAppointment() {
+      const p = path();
+      return (
+        p.includes('/home/index') ||
+        p.includes('logincaptchasubmit') ||
+        p.includes('loginsubmit') ||
+        p.includes('/account/changepassword')
+      );
+    }
+  };
+})();
