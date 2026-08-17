@@ -329,6 +329,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (action === 'overlayStatus') {
+    const tabId = sender?.tab?.id;
+    notifyOverlay(tabId, message.text, message.phase)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   if (action === 'getDebugLog') {
     getDebugLog()
       .then(sendResponse)
@@ -420,6 +428,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (action === 'injectVisaTypeMain') {
+    const tabId = sender?.tab?.id;
+    const pageUrl = message.url || sender?.tab?.url;
+    if (tabId == null) {
+      sendResponse({ success: false, error: 'no tab' });
+      return false;
+    }
+    injectVisaTypeOnTab(tabId, pageUrl)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   sendResponse({ success: false, error: `Unknown action: ${action}` });
   debugLog('message.unknown', { action });
   return false;
@@ -428,66 +449,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function isVisaTypeUrl(url) {
   if (!url) return false;
   const lower = url.toLowerCase();
-  return (
-    lower.includes('blsspainmorocco.net') &&
-    (lower.includes('/appointment/visatype') ||
-      (lower.includes('/appointment/newappointment') && !lower.includes('captcha')))
-  );
+  return lower.includes('blsspainmorocco.net') && lower.includes('/appointment/visatype');
 }
 
-async function injectVisaTypeOnTab(tabId) {
-  const helpers = `
-    if (!window.__fanikaPageHelpersInstalled) {
-      window.__fanikaPageHelpersInstalled = true;
-      window.getFanikaData = function () {
-        return new Promise(function (resolve, reject) {
-          var id = Date.now() + Math.random();
-          function handler(e) {
-            if (!e.data || e.data.type !== 'FANIKA_DATA_RESPONSE' || e.data.requestId !== id) return;
-            window.removeEventListener('message', handler);
-            if (e.data.error) reject(new Error(e.data.error));
-            else resolve(e.data.data);
-          }
-          window.addEventListener('message', handler);
-          window.postMessage({ type: 'FANIKA_REQUEST_DATA', requestId: id }, '*');
-        });
-      };
-      window.fanikaDebug = function (event, data) {
-        window.postMessage({ type: 'FANIKA_DEBUG', event: event, data: data }, '*');
-      };
-      window.fanikaOverlay = function (text, phase) {
-        window.postMessage({ type: 'FANIKA_OVERLAY', text: text, phase: phase }, '*');
-      };
-    }
-  `;
+const visaTypeInjectInFlight = new Set();
 
-  for (let attempt = 1; attempt <= 4; attempt++) {
-    try {
-      await chrome.tabs.sendMessage(tabId, { action: 'injectVisaType' });
-      await debugLog('visaType.inject.sent', { tabId, attempt });
-      return;
-    } catch (err) {
-      await debugLog('visaType.inject.retry', { tabId, attempt, error: err.message });
-      if (attempt === 4) break;
-      await sleep(400 * attempt);
-    }
-  }
-
+async function injectVisaTypeOnTab(tabId, pageUrl) {
+  if (!tabId || visaTypeInjectInFlight.has(tabId)) return;
+  visaTypeInjectInFlight.add(tabId);
   try {
-    await chrome.tabs.sendMessage(tabId, { action: 'injectScript', script: helpers, path: 'page-helpers' });
-    const scripts = ['shared/countdown.js', 'step-4-visa-type/visa-type-page.js'];
-    for (const path of scripts) {
-      const res = await fetch(chrome.runtime.getURL(path));
-      if (!res.ok) continue;
-      await chrome.tabs.sendMessage(tabId, {
-        action: 'injectScript',
-        script: await res.text(),
-        path
-      });
-    }
-    await debugLog('visaType.inject.fallback', { tabId });
+    await debugLog('visaType.inject.main.start', { tabId, url: pageUrl });
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      world: 'MAIN',
+      injectImmediately: true,
+      files: [
+        'shared/page-helpers.js',
+        'shared/countdown.js',
+        'step-4-visa-type/visa-type-page.js'
+      ]
+    });
+    await debugLog('visaType.inject.main.done', { tabId, url: pageUrl });
+    setTimeout(() => visaTypeInjectInFlight.delete(tabId), 1500);
   } catch (err) {
-    await debugLog('visaType.inject.fail', { tabId, error: err.message });
+    visaTypeInjectInFlight.delete(tabId);
+    await debugLog('visaType.inject.main.fail', {
+      tabId,
+      url: pageUrl,
+      error: err.message
+    });
   }
 }
 
@@ -510,8 +500,8 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
     maybeInterceptNewAppointment(tabId, url);
   }
   if (info.status !== 'complete') return;
-  if (!isVisaTypeUrl(tab.url)) return;
-  injectVisaTypeOnTab(tabId);
+  if (!isVisaTypeUrl(url || tab.url)) return;
+  injectVisaTypeOnTab(tabId, url || tab.url);
 });
 
 releaseChromeProxy()

@@ -28,9 +28,7 @@
       return p.includes('/appointment/newappointment') && this.hasCaptchaUi();
     },
     isVisaType() {
-      const p = path();
-      if (p.includes('/appointment/visatype')) return true;
-      return p.includes('/appointment/newappointment') && !this.hasCaptchaUi();
+      return path().includes('/appointment/visatype');
     },
     shouldGoNewAppointment() {
       if (window.fanikaRedirect) {

@@ -5,32 +5,57 @@
   if (window.__fanikaVisaTypePageInstalled) return;
   window.__fanikaVisaTypePageInstalled = true;
 
+  function dbg(event, data) {
+    console.log('[fanika/visa-type]', event, data || '');
+    if (typeof window.fanikaDebug === 'function') {
+      window.fanikaDebug(event, data);
+    }
+  }
+
   const path = (location.pathname || '').toLowerCase();
-  const isVisa =
-    path.includes('/appointment/visatype') ||
-    (path.includes('/appointment/newappointment') &&
-      !document.querySelector('.box-label') &&
-      !document.querySelector('#captcha-main-div'));
-  if (!isVisa) return;
+  const isVisa = path.includes('/appointment/visatype');
+
+  dbg('visaType.page.boot', { path, isVisa, url: location.href });
+
+  if (!isVisa) {
+    dbg('visaType.page.skip', { reason: 'not a visa-type page', path });
+    return;
+  }
 
   let client = null;
   let settings = {};
 
   try {
+    dbg('visaType.data.request', {});
     const data = await window.getFanikaData();
     client = data.client || {};
     settings = data.settings || {};
-    console.log('[fanika/visa-type] client:', client?.name);
+    dbg('visaType.data.loaded', {
+      client: client?.name || null,
+      selectedClientId: data.selectedClientId || null,
+      location: client?.location || null,
+      visaType: client?.visaType || null,
+      visaSubtype: client?.visaSubtype || null,
+      category: client?.category || null,
+      applicantsCount: client?.applicantsCount ?? 1
+    });
     if (typeof window.fanikaOverlay === 'function') {
       window.fanikaOverlay('Filling visa type…', 'wipe');
     }
   } catch (err) {
-    console.error('[fanika/visa-type] load data failed', err);
+    dbg('visaType.data.fail', { error: err.message });
+    if (typeof window.fanikaOverlay === 'function') {
+      window.fanikaOverlay('Visa type: load client failed — ' + err.message, 'error');
+    }
     return;
   }
 
   if (!client?.location) {
-    console.warn('[fanika/visa-type] No client visa data');
+    dbg('visaType.data.missing', {
+      reason: 'client.location empty',
+      client: client?.name || null,
+      hint: 'Save Location / Visa type / Subtype / Category in Options'
+    });
     if (typeof window.fanikaOverlay === 'function') {
       window.fanikaOverlay('No visa fields on client — save in Options', 'error');
     }
@@ -56,12 +81,21 @@
     return rid ? `#${rid}` : null;
   }
 
-  function setKendo(sel, val) {
-    if (typeof jQuery === 'undefined' || !sel || val == null) return false;
+  function diagnoseKendo(sel, val) {
+    if (typeof jQuery === 'undefined') return 'no jQuery';
+    if (!sel) return 'no selector (label not found)';
+    if (val == null) return 'no id for value';
     const $el = jQuery(sel);
-    if (!$el.length) return false;
+    if (!$el.length) return 'element missing: ' + sel;
     const w = $el.data('kendoDropDownList') || (window.kendo && kendo.widgetInstance($el));
-    if (!w) return false;
+    if (!w) return 'no kendoDropDownList on ' + sel;
+    return null;
+  }
+
+  function setKendo(sel, val) {
+    if (diagnoseKendo(sel, val)) return false;
+    const $el = jQuery(sel);
+    const w = $el.data('kendoDropDownList') || (window.kendo && kendo.widgetInstance($el));
     w.value(val);
     w.trigger('change');
     return true;
@@ -80,14 +114,31 @@
     return true;
   }
 
+  function pageSnapshot() {
+    return {
+      hasJQuery: typeof jQuery !== 'undefined',
+      hasKendo: typeof kendo !== 'undefined',
+      hasLocationData: Boolean(window.locationData),
+      hasVisaIdData: Boolean(window.visaIdData),
+      hasVisasubIdData: Boolean(window.visasubIdData),
+      hasCategoryData: Boolean(window.categoryData),
+      locationNames: (window.locationData || []).slice(0, 8).map((x) => x.Name),
+      readyState: document.readyState
+    };
+  }
+
   function submitForm() {
     if (!settings?.submitPages?.visaTypePage) {
-      console.log('[fanika/visa-type] auto-submit off');
+      dbg('visaType.submit.skip', { reason: 'auto-submit disabled in settings' });
       return;
     }
     const submitButton = document.getElementById('btnSubmit');
-    if (!submitButton) return;
+    if (!submitButton) {
+      dbg('visaType.submit.fail', { reason: 'btnSubmit not found' });
+      return;
+    }
     const delay = settings.submitPages.visaTypePageMs || 0;
+    dbg('visaType.submit.start', { delayMs: delay });
     if (delay > 0 && typeof window.startCountdown === 'function') {
       window.startCountdown(delay, 'btnSubmit');
     } else {
@@ -96,23 +147,61 @@
   }
 
   function fillForm() {
+    dbg('visaType.fill.start', pageSnapshot());
+
     const fieldState = { ok1: false, ok2: false, ok3: false, ok4: false, ok5: false };
+    const fieldLabels = {
+      ok1: 'Location',
+      ok2: 'Visa Type',
+      ok3: 'Visa Sub Type',
+      ok4: 'Category',
+      ok5: 'Appointment For / Members'
+    };
     let attemptCount = 0;
     const maxAttempts = 200;
     let lastWaitLog = 0;
+    let lastProgressLog = '';
+    let lastStateKey = '';
 
     const fillInterval = setInterval(() => {
       attemptCount++;
       if (attemptCount >= maxAttempts) {
         clearInterval(fillInterval);
-        console.warn('[fanika/visa-type] max fill attempts', fieldState, {
-          hasJQuery: typeof jQuery !== 'undefined',
-          hasLocationData: Boolean(window.locationData),
-          client: client?.name,
-          location: client?.location
-        });
+        const locSel = getFieldSelector('Location');
+        const visaSel = getFieldSelector('Visa Type');
+        const subSel = getFieldSelector('Visa Sub Type');
+        const catSel = getFieldSelector('Category');
+        const locationId = getIdByName(window.locationData, client.location);
+        const timeoutDetail = {
+          fieldState,
+          attempts: attemptCount,
+          client: client.name,
+          wanted: {
+            location: client.location,
+            visaType: client.visaType,
+            visaSubtype: client.visaSubtype,
+            category: client.category
+          },
+          resolvedIds: {
+            location: locationId,
+            visaType: getIdByName(window.visaIdData, client.visaType),
+            visaSubtype: getIdByName(window.visasubIdData, client.visaSubtype)
+          },
+          selectors: { location: locSel, visaType: visaSel, visaSubType: subSel, category: catSel },
+          kendoIssues: {
+            location: diagnoseKendo(locSel, locationId),
+            visaType: diagnoseKendo(visaSel, getIdByName(window.visaIdData, client.visaType)),
+            visaSubType: diagnoseKendo(subSel, getIdByName(window.visasubIdData, client.visaSubtype))
+          },
+          page: pageSnapshot()
+        };
+        dbg('visaType.fill.timeout', timeoutDetail);
         if (typeof window.fanikaOverlay === 'function') {
-          window.fanikaOverlay('Visa type fill timed out — check Options client', 'error');
+          const stuck = Object.entries(fieldState)
+            .filter(([, v]) => !v)
+            .map(([k]) => fieldLabels[k])
+            .join(', ');
+          window.fanikaOverlay('Visa fill timeout — stuck: ' + stuck, 'error');
         }
         return;
       }
@@ -120,7 +209,12 @@
       if (typeof jQuery === 'undefined' || !window.locationData) {
         if (attemptCount - lastWaitLog >= 20) {
           lastWaitLog = attemptCount;
-          console.log('[fanika/visa-type] waiting for jQuery/locationData…', attemptCount);
+          dbg('visaType.fill.wait', {
+            attempt: attemptCount,
+            hasJQuery: typeof jQuery !== 'undefined',
+            hasLocationData: Boolean(window.locationData),
+            readyState: document.readyState
+          });
         }
         return;
       }
@@ -145,6 +239,15 @@
         members: getIdByName(window.applicantsNoData, `${client.applicantsCount || 1} Members`)
       };
 
+      if (!locationId && attemptCount % 20 === 0) {
+        dbg('visaType.id.missing', {
+          field: 'location',
+          wanted: client.location,
+          available: (window.locationData || []).map((x) => x.Name)
+        });
+      }
+
+      const prevStateKey = lastStateKey;
       if (!fieldState.ok1) fieldState.ok1 = setKendo(getFieldSelector('Location'), idMap.location);
       if (!fieldState.ok2) fieldState.ok2 = setKendo(getFieldSelector('Visa Type'), idMap.visaType);
 
@@ -164,6 +267,13 @@
               window.visasubIdData = dataSource;
               const newId = getIdByName(window.visasubIdData, client.visaSubtype);
               if (newId) fieldState.ok3 = setKendo(selector, newId);
+              else if (attemptCount % 20 === 0) {
+                dbg('visaType.id.missing', {
+                  field: 'visaSubtype',
+                  wanted: client.visaSubtype,
+                  available: dataSource.map((x) => x.Name)
+                });
+              }
             }
           }
         }
@@ -189,14 +299,62 @@
         }
       }
 
+      lastStateKey = JSON.stringify(fieldState);
+      if (lastStateKey !== prevStateKey) {
+        dbg('visaType.fill.progress', {
+          attempt: attemptCount,
+          fieldState,
+          idMap,
+          selectors: {
+            location: getFieldSelector('Location'),
+            visaType: getFieldSelector('Visa Type'),
+            visaSubType: getFieldSelector('Visa Sub Type'),
+            category: getFieldSelector('Category')
+          }
+        });
+      } else if (attemptCount % 40 === 0 && lastProgressLog !== lastStateKey) {
+        lastProgressLog = lastStateKey;
+        const stuck = Object.entries(fieldState)
+          .filter(([, ok]) => !ok)
+          .map(([k]) => {
+            const label = fieldLabels[k];
+            const sel =
+              k === 'ok1'
+                ? getFieldSelector('Location')
+                : k === 'ok2'
+                  ? getFieldSelector('Visa Type')
+                  : k === 'ok3'
+                    ? getFieldSelector('Visa Sub Type')
+                    : k === 'ok4'
+                      ? getFieldSelector('Category')
+                      : null;
+            const idKey =
+              k === 'ok1'
+                ? 'location'
+                : k === 'ok2'
+                  ? 'visaType'
+                  : k === 'ok3'
+                    ? 'visaSubType'
+                    : k === 'ok4'
+                      ? 'category'
+                      : 'members';
+            return {
+              field: label,
+              issue: sel ? diagnoseKendo(sel, idMap[idKey]) : 'selector not found',
+              id: idMap[idKey]
+            };
+          });
+        dbg('visaType.fill.stuck', { attempt: attemptCount, stuck, fieldState });
+      }
+
       if (fieldState.ok1 && fieldState.ok2 && fieldState.ok3 && fieldState.ok4 && fieldState.ok5) {
         clearInterval(fillInterval);
-        if (typeof window.fanikaDebug === 'function') {
-          window.fanikaDebug('visaType.filled', {
-            client: client.name,
-            location: client.location
-          });
-        }
+        dbg('visaType.filled', {
+          client: client.name,
+          location: client.location,
+          visaType: client.visaType,
+          attempts: attemptCount
+        });
         if (typeof window.fanikaOverlay === 'function') {
           window.fanikaOverlay('Visa type filled', 'ok');
         }
@@ -206,6 +364,7 @@
   }
 
   function init() {
+    dbg('visaType.init', { readyState: document.readyState, snapshot: pageSnapshot() });
     fillForm();
   }
 

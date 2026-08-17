@@ -1,24 +1,39 @@
 /**
- * Inject visa-type bot into the PAGE world (Kendo/jQuery live there).
- * Scripts are fetched and injected inline — external chrome-extension:// src is blocked by BLS CSP.
+ * Isolated-world bridge for visa-type MAIN-world scripts.
+ * Does not insert <script> tags (BLS CSP blocks them). Background uses
+ * chrome.scripting.executeScript({ world: 'MAIN' }).
  */
 (function () {
   if (window.__fanikaPageInjectInstalled) return;
   window.__fanikaPageInjectInstalled = true;
 
+  function dbg(event, data) {
+    console.log('[fanika/page-inject]', event, data || '');
+    try {
+      chrome.runtime.sendMessage({ action: 'debugLog', event, data });
+    } catch (_) {}
+  }
+
   const getData = () =>
-    typeof window.getFanikaData === 'function' ? window.getFanikaData() : Promise.reject(new Error('no getFanikaData'));
+    typeof window.getFanikaData === 'function'
+      ? window.getFanikaData()
+      : Promise.reject(new Error('no getFanikaData'));
 
   window.addEventListener('message', async (e) => {
     if (e.source !== window || !e.data) return;
     if (e.data.type === 'FANIKA_REQUEST_DATA') {
       try {
         const data = await getData();
+        dbg('visaType.bridge.dataOk', {
+          client: data?.client?.name || null,
+          requestId: e.data.requestId
+        });
         window.postMessage(
           { type: 'FANIKA_DATA_RESPONSE', requestId: e.data.requestId, data },
           '*'
         );
       } catch (err) {
+        dbg('visaType.bridge.dataFail', { error: err.message, requestId: e.data.requestId });
         window.postMessage(
           {
             type: 'FANIKA_DATA_RESPONSE',
@@ -45,110 +60,29 @@
     }
   });
 
-  function injectInline(code, label) {
-    const s = document.createElement('script');
-    s.textContent = code;
-    if (label) s.setAttribute('data-fanika', label);
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
+  function isVisaTypeUrl() {
+    return (location.pathname || '').toLowerCase().includes('/appointment/visatype');
   }
 
-  async function injectExtensionScript(path) {
-    const url = chrome.runtime.getURL(path);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(path + ' HTTP ' + res.status);
-    injectInline(await res.text(), path);
-    console.log('[fanika/page-inject] injected', path);
-  }
-
-  function injectPageHelpers() {
-    if (window.__fanikaPageHelpersInstalled) return;
-    window.__fanikaPageHelpersInstalled = true;
-    injectInline(
-      `
-      window.getFanikaData = function () {
-        return new Promise(function (resolve, reject) {
-          var id = Date.now() + Math.random();
-          function handler(e) {
-            if (!e.data || e.data.type !== 'FANIKA_DATA_RESPONSE' || e.data.requestId !== id) return;
-            window.removeEventListener('message', handler);
-            if (e.data.error) reject(new Error(e.data.error));
-            else resolve(e.data.data);
-          }
-          window.addEventListener('message', handler);
-          window.postMessage({ type: 'FANIKA_REQUEST_DATA', requestId: id }, '*');
-        });
-      };
-      window.fanikaDebug = function (event, data) {
-        window.postMessage({ type: 'FANIKA_DEBUG', event: event, data: data }, '*');
-      };
-      window.fanikaOverlay = function (text, phase) {
-        window.postMessage({ type: 'FANIKA_OVERLAY', text: text, phase: phase }, '*');
-      };
-    `,
-      'page-helpers'
+  function requestMainWorldInject() {
+    if (!isVisaTypeUrl()) return;
+    dbg('visaType.inject.request', { from: 'content', url: location.href });
+    chrome.runtime.sendMessage(
+      { action: 'injectVisaTypeMain', url: location.href },
+      (res) => {
+        if (chrome.runtime.lastError) {
+          dbg('visaType.inject.requestFail', { error: chrome.runtime.lastError.message });
+          return;
+        }
+        dbg('visaType.inject.requestAck', res || {});
+      }
     );
   }
 
-  let injectPromise = null;
-
-  async function injectVisaTypeBot() {
-    if (!window.fanikaPage?.isVisaType()) return { skipped: true };
-
-    if (!injectPromise) {
-      injectPromise = (async () => {
-        console.log('[fanika/page-inject] VisaType page — injecting page-world bot');
-        chrome.runtime.sendMessage({
-          action: 'debugLog',
-          event: 'visaType.inject.start',
-          data: { url: location.href }
-        });
-
-        injectPageHelpers();
-        await injectExtensionScript('shared/countdown.js');
-        await injectExtensionScript('step-4-visa-type/visa-type-page.js');
-        return { success: true };
-      })().catch((err) => {
-        injectPromise = null;
-        console.error('[fanika/page-inject] inject failed', err);
-        chrome.runtime.sendMessage({
-          action: 'debugLog',
-          event: 'visaType.inject.fail',
-          data: { error: err.message, url: location.href }
-        });
-        throw err;
-      });
-    }
-
-    return injectPromise;
-  }
-
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg.action === 'injectScript') {
-      try {
-        injectInline(msg.script, msg.path || 'background-inject');
-        sendResponse({ success: true });
-      } catch (err) {
-        sendResponse({ success: false, error: err.message });
-      }
-      return true;
-    }
-    if (msg.action === 'injectVisaType') {
-      injectVisaTypeBot()
-        .then((r) => sendResponse({ success: true, ...r }))
-        .catch((err) => sendResponse({ success: false, error: err.message }));
-      return true;
-    }
-    return false;
-  });
-
-  function tryInject() {
-    injectVisaTypeBot().catch(() => {});
-  }
-
-  tryInject();
+  dbg('visaType.inject.listenerReady', { url: location.href, path: location.pathname });
+  requestMainWorldInject();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', tryInject);
+    document.addEventListener('DOMContentLoaded', requestMainWorldInject);
   }
-  window.addEventListener('load', tryInject);
+  window.addEventListener('load', requestMainWorldInject);
 })();

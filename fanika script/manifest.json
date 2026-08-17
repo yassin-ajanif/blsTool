@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "description": "Fanika — BLS booking bot (login, captcha, visa type) + cookie wipe / gost rotate",
   "action": {
     "default_title": "Fanika BLS",
@@ -19,7 +19,8 @@
     "proxy",
     "webRequest",
     "webRequestAuthProvider",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>",
@@ -65,18 +66,6 @@
         "step-3-appointment-captcha/appointment-captcha-page.js"
       ],
       "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "shared/countdown.js",
-        "step-4-visa-type/visa-type-page.js"
-      ],
-      "matches": [
-        "https://www.blsspainmorocco.net/*",
-        "https://blsspainmorocco.net/*"
-      ]
     }
   ]
 }
