@@ -1,85 +1,107 @@
 /**
- * Fanika standalone background
- * Too Many → wipe cookies, rotate until IP changes, then go to login.
+ * Fanika background
+ * Too Many: wipe up to 3 times → still 429 → gost helper rotate → wipe → login.
+ * chrome.proxy disabled — FoxyProxy + gost-rotate.
  */
 importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js');
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
-const LOGIN_SUBMIT_MAX_TRIES = 3;
 const TRY_STORE_KEY = 'fanikaLoginSubmitTries';
+const TOO_MANY_WIPE_KEY = 'fanikaTooManyWipeCount';
+const MAX_WIPES_BEFORE_ROTATE = 3;
+const GOST_HELPER_URL = 'http://127.0.0.1:9999';
+const ROTATE_IP_MAX_ATTEMPTS = 12;
+const ROTATE_IP_RETRY_MS = 1500;
 
 let cachedPublicIp = null;
 let ipFetchPromise = null;
-let proxyReady = null;
 
-async function ensureProxy() {
-  await debugLog('proxy.ensure.start');
-  if (!proxyReady) {
-    proxyReady = rotateProxies.start().then(async (started) => {
-      await debugLog('proxy.ensure.ok', started);
-      return started;
-    }).catch(async (err) => {
-      proxyReady = null;
-      await debugLog('proxy.ensure.fail', { error: err.message });
-      console.error('[fanika] Proxy init failed:', err);
-      throw err;
-    });
+/** Drop leftover chrome.proxy so FoxyProxy / gost can own the tunnel. */
+async function releaseChromeProxy() {
+  try {
+    await chrome.proxy.settings.clear({ scope: 'regular' });
+    await debugLog('proxy.released', { reason: 'gost-foxyproxy-manual' });
+  } catch (err) {
+    await debugLog('proxy.release.fail', { error: err.message });
   }
-  return proxyReady;
 }
 
-async function fetchPublicIp() {
-  if (ipFetchPromise) return ipFetchPromise;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  ipFetchPromise = (async () => {
+async function fetchPublicIp(force) {
+  if (!force && ipFetchPromise) return ipFetchPromise;
+
+  const run = (async () => {
     try {
       const res = await fetch(IP_LOOKUP_URL, { cache: 'no-store' });
       if (!res.ok) throw new Error(`IP lookup HTTP ${res.status}`);
       const text = (await res.text()).trim();
       if (!text) throw new Error('Empty IP response');
       cachedPublicIp = text;
-      rotateProxies.lastIp = text;
       await debugLog('ip.fetch.ok', { ip: cachedPublicIp });
       return cachedPublicIp;
     } catch (err) {
       console.error('[fanika] IP lookup failed:', err);
-      ipFetchPromise = null;
       await debugLog('ip.fetch.fail', { error: err.message });
       throw err;
+    } finally {
+      ipFetchPromise = null;
     }
   })();
 
-  return ipFetchPromise;
+  if (!force) ipFetchPromise = run;
+  return run;
 }
 
-function invalidateIpCache() {
-  cachedPublicIp = null;
-  ipFetchPromise = null;
+function tryStore() {
+  return chrome.storage.session || chrome.storage.local;
 }
 
-async function openLogin() {
-  await debugLog('login.open.start', { url: LOGIN_URL });
+async function getTooManyWipeCount() {
+  const store = tryStore();
+  const stored = await store.get(TOO_MANY_WIPE_KEY);
+  return Number(stored[TOO_MANY_WIPE_KEY] || 0) || 0;
+}
+
+async function setTooManyWipeCount(n) {
+  const store = tryStore();
+  await store.set({ [TOO_MANY_WIPE_KEY]: Math.max(0, n) });
+}
+
+async function setLoginSubmitTry(tabId, count) {
+  const store = tryStore();
+  const stored = await store.get(TRY_STORE_KEY);
+  const map = { ...(stored[TRY_STORE_KEY] || {}) };
+  if (count <= 0) delete map[tabId];
+  else map[tabId] = count;
+  await store.set({ [TRY_STORE_KEY]: map });
+}
+
+async function notifyOverlay(tabId, text, phase) {
+  if (tabId == null) return;
   try {
-    await ensureProxy();
-  } catch (err) {
-    console.warn('[fanika] Opening login without proxy:', err.message);
-    await debugLog('login.open.proxySkip', { error: err.message });
+    await chrome.tabs.sendMessage(tabId, {
+      action: 'overlayStatus',
+      text,
+      phase: phase || 'info'
+    });
+  } catch (_) {
+    // content script may not be ready yet
   }
+  await debugLog('overlay.status', { tabId, text, phase });
+}
 
-  try {
-    await fetchPublicIp();
-  } catch (_) {}
-
-  chrome.tabs.create({ url: LOGIN_URL });
-  const result = {
-    success: true,
-    url: LOGIN_URL,
-    ip: cachedPublicIp,
-    proxy: rotateProxies.getStatus().proxy
-  };
-  await debugLog('login.open.done', result);
-  return result;
+async function goToLogin(tabId) {
+  if (tabId != null) await setLoginSubmitTry(tabId, 0);
+  const url = LOGIN_URL + '?fresh=1';
+  if (tabId != null) {
+    await chrome.tabs.update(tabId, { url });
+  } else {
+    await chrome.tabs.create({ url });
+  }
 }
 
 async function wipeAllCookies() {
@@ -104,152 +126,153 @@ async function wipeAllCookies() {
   return count;
 }
 
-function isLoginSubmitUrl(url) {
-  return String(url || '').toLowerCase().includes('/account/loginsubmit');
-}
-
-function tryStore() {
-  return chrome.storage.session || chrome.storage.local;
-}
-
-async function getLoginSubmitTry(tabId) {
-  const stored = await tryStore().get(TRY_STORE_KEY);
-  const map = stored[TRY_STORE_KEY] || {};
-  return Number(map[tabId]) || 0;
-}
-
-async function setLoginSubmitTry(tabId, count) {
-  const store = tryStore();
-  const stored = await store.get(TRY_STORE_KEY);
-  const map = { ...(stored[TRY_STORE_KEY] || {}) };
-  if (count <= 0) delete map[tabId];
-  else map[tabId] = count;
-  await store.set({ [TRY_STORE_KEY]: map });
-}
-
-async function goToLogin(tabId) {
-  if (tabId != null) await setLoginSubmitTry(tabId, 0);
-  if (tabId != null) {
-    await chrome.tabs.update(tabId, { url: LOGIN_URL });
-  } else {
-    await chrome.tabs.create({ url: LOGIN_URL });
-  }
-}
-
-async function waitForNewProxy() {
+async function openLogin() {
+  await debugLog('login.open.start', { url: LOGIN_URL });
+  const cookieCount = await wipeAllCookies();
+  await debugLog('login.open.cookiesWiped', { count: cookieCount });
   try {
-    await ensureProxy();
-    const rotated = await rotateProxies.rotateUntilIpChanges();
-    if (rotated.ip) cachedPublicIp = rotated.ip;
-    await debugLog('proxy.waitNew', {
-      changed: rotated.changed,
-      previousIp: rotated.previousIp,
-      ip: rotated.ip,
-      attempts: rotated.attempts,
-      error: rotated.error || null
-    });
-    return rotated;
-  } catch (err) {
-    await debugLog('tooMany.rotateFail', { error: err.message });
-    return { changed: false, error: err.message };
+    await fetchPublicIp(true);
+  } catch (_) {}
+  chrome.tabs.create({ url: LOGIN_URL });
+  return {
+    success: true,
+    url: LOGIN_URL,
+    cookiesWiped: cookieCount,
+    ip: cachedPublicIp
+  };
+}
+
+/** Ask gost-rotate helper to restart gost with a new sticky session. */
+async function callGostRotate() {
+  await debugLog('gost.rotate.request', { url: GOST_HELPER_URL + '/rotate' });
+  const res = await fetch(GOST_HELPER_URL + '/rotate', {
+    method: 'POST',
+    cache: 'no-store'
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.error || `gost helper HTTP ${res.status}`);
   }
+  await debugLog('gost.rotate.response', body);
+  return body;
+}
+
+/** After gost restarts, poll icanhazip via FoxyProxy until IP differs. */
+async function waitForIpChange(previousIp) {
+  let lastIp = previousIp;
+  for (let i = 1; i <= ROTATE_IP_MAX_ATTEMPTS; i++) {
+    await sleep(ROTATE_IP_RETRY_MS);
+    try {
+      const ip = await fetchPublicIp(true);
+      lastIp = ip;
+      if (previousIp && ip && ip !== previousIp) {
+        return { changed: true, previousIp, ip, attempt: i };
+      }
+    } catch (err) {
+      await debugLog('gost.waitIp.fail', { attempt: i, error: err.message });
+    }
+  }
+  return { changed: false, previousIp, ip: lastIp, attempt: ROTATE_IP_MAX_ATTEMPTS };
 }
 
 async function handleTooMany(tabId, pageUrl) {
   const url = pageUrl || '';
-  await debugLog('tooMany.start', { tabId, url });
+  let wipeStreak = await getTooManyWipeCount();
+  await debugLog('tooMany.start', { tabId, url, wipeStreak });
 
-  if (isLoginSubmitUrl(url)) {
-    const used = await getLoginSubmitTry(tabId);
-    const next = used + 1;
+  // Already wiped 3 times and still on 429 → rotate IP first
+  if (wipeStreak >= MAX_WIPES_BEFORE_ROTATE) {
+    await notifyOverlay(tabId, 'Rotating IP via gost…', 'rotating');
+    let previousIp = cachedPublicIp;
+    try {
+      previousIp = await fetchPublicIp(true);
+    } catch (_) {}
 
-    if (next <= LOGIN_SUBMIT_MAX_TRIES) {
-      const cookieCount = await wipeAllCookies();
-      const rotated = await waitForNewProxy();
-      if (!rotated.changed) {
-        await debugLog('loginSubmit.skipReload', {
-          reason: 'same-proxy',
-          try: used,
-          ip: rotated.ip,
-          cookieCount
-        });
-        return {
-          success: false,
-          action: 'ipUnchanged',
-          try: used,
-          ip: rotated.ip,
-          error: rotated.error || 'Same proxy — not reloading (avoid ban)'
-        };
+    let helperResult = null;
+    try {
+      helperResult = await callGostRotate();
+      if (helperResult?.ip) {
+        // helper saw a change through gost; Chrome may need a moment
+        await notifyOverlay(
+          tabId,
+          'IP rotating… ' + (helperResult.previousIp || '?') + ' → ' + helperResult.ip,
+          'rotating'
+        );
       }
-      await setLoginSubmitTry(tabId, next);
-      await debugLog('loginSubmit.retry', {
-        try: next,
-        max: LOGIN_SUBMIT_MAX_TRIES,
-        cookieCount,
-        previousIp: rotated.previousIp,
-        ip: rotated.ip,
-        sessionId: rotated.sessionId
-      });
-      if (tabId != null) {
-        await chrome.tabs.reload(tabId);
-      }
+    } catch (err) {
+      await debugLog('gost.rotate.fail', { error: err.message });
+      await notifyOverlay(
+        tabId,
+        'Rotate failed — is gost-rotate running? ' + err.message,
+        'error'
+      );
       return {
-        success: true,
-        action: 'retryLoginSubmit',
-        try: next,
-        max: LOGIN_SUBMIT_MAX_TRIES,
-        previousIp: rotated.previousIp,
-        ip: rotated.ip
+        success: false,
+        action: 'rotateFailed',
+        error: err.message,
+        wipeStreak
       };
     }
 
-    await debugLog('loginSubmit.giveUpGoLogin', { tries: used, tabId });
-    const cookieCount = await wipeAllCookies();
-    const rotated = await waitForNewProxy();
-    if (!rotated.changed) {
-      await debugLog('loginSubmit.skipGoLogin', { reason: 'same-proxy', ip: rotated.ip, cookieCount });
+    await notifyOverlay(tabId, 'Waiting for new IP…', 'rotating');
+    const waited = await waitForIpChange(previousIp || helperResult?.previousIp);
+    if (!waited.changed) {
+      await notifyOverlay(
+        tabId,
+        'IP unchanged after rotate (' + (waited.ip || '?') + ') — check gost',
+        'error'
+      );
+      await debugLog('tooMany.ipUnchanged', waited);
       return {
         success: false,
         action: 'ipUnchanged',
-        tries: LOGIN_SUBMIT_MAX_TRIES,
-        ip: rotated.ip,
-        error: 'Same proxy — not opening login (avoid ban)'
+        ...waited,
+        wipeStreak
       };
     }
+
+    cachedPublicIp = waited.ip;
+    await notifyOverlay(tabId, 'New IP: ' + waited.ip + ' — wiping cookies…', 'ok');
+    await setTooManyWipeCount(0);
+    const count = await wipeAllCookies();
     await goToLogin(tabId);
+    await debugLog('tooMany.rotated', { ...waited, cookiesWiped: count });
     return {
       success: true,
-      action: 'goLogin',
-      tries: LOGIN_SUBMIT_MAX_TRIES,
-      cookiesWiped: cookieCount,
-      previousIp: rotated.previousIp,
-      ip: rotated.ip,
+      action: 'rotated',
+      previousIp: waited.previousIp,
+      ip: waited.ip,
+      count,
       redirected: LOGIN_URL
     };
   }
 
+  // Wipe streak 1..3
+  wipeStreak += 1;
+  await setTooManyWipeCount(wipeStreak);
+  await notifyOverlay(
+    tabId,
+    'Too Many — cookie wipe ' + wipeStreak + '/' + MAX_WIPES_BEFORE_ROTATE,
+    'wipe'
+  );
+
   const count = await wipeAllCookies();
-  await debugLog('tooMany.cookiesWiped', { count });
-  const rotated = await waitForNewProxy();
-  if (!rotated.changed) {
-    await debugLog('tooMany.skipRedirect', { reason: 'same-proxy', ip: rotated.ip });
-    return {
-      success: false,
-      action: 'ipUnchanged',
-      count,
-      ip: rotated.ip,
-      error: 'Same proxy — not opening login (avoid ban)'
-    };
-  }
+  await debugLog('tooMany.cookiesWiped', { count, url, wipeStreak });
   await goToLogin(tabId);
-  await debugLog('tooMany.redirect', { url: LOGIN_URL, ip: rotated.ip, tabId });
+  await debugLog('tooMany.redirect', {
+    url: LOGIN_URL,
+    tabId,
+    cookiesWiped: count,
+    wipeStreak
+  });
   return {
     success: true,
     action: 'goLogin',
     count,
+    wipeStreak,
+    maxWipes: MAX_WIPES_BEFORE_ROTATE,
     redirected: LOGIN_URL,
-    previousIp: rotated.previousIp,
-    ip: rotated.ip
+    ip: cachedPublicIp
   };
 }
 
@@ -290,48 +313,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (action === 'wipeAllCookies') {
+    wipeAllCookies()
+      .then((count) => sendResponse({ success: true, count }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
   if (action === 'getPublicIp') {
-    if (cachedPublicIp) {
-      sendResponse({ success: true, ip: cachedPublicIp });
-      return false;
-    }
-    fetchPublicIp()
+    fetchPublicIp(false)
       .then((ip) => sendResponse({ success: true, ip }))
       .catch((err) => sendResponse({ success: false, error: err.message, ip: null }));
     return true;
   }
 
-  if (action === 'rotateProxy' || action === 'rotateProxies') {
-    ensureProxy()
-      .then(() => rotateProxies.rotateUntilIpChanges())
-      .then(async (result) => {
-        if (result.ip) cachedPublicIp = result.ip;
-        await debugLog('proxy.rotateUntilDone', result);
-        sendResponse(result);
-      })
+  if (action === 'getTooManyWipeCount') {
+    getTooManyWipeCount()
+      .then((wipeStreak) => sendResponse({ success: true, wipeStreak, max: MAX_WIPES_BEFORE_ROTATE }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
-  if (action === 'rotateProxiesStatus') {
-    sendResponse(rotateProxies.getStatus());
-    return false;
-  }
+  if (
+    action === 'rotateProxy' ||
+    action === 'rotateProxies' ||
+    action === 'enableProxy' ||
+    action === 'disableProxy' ||
+    action === 'rotateProxiesStatus'
+  ) {
+    // Manual rotate via gost helper (optional)
+    if (action === 'rotateProxy' || action === 'rotateProxies') {
+      const tabId = sender?.tab?.id;
+      (async () => {
+        await notifyOverlay(tabId, 'Rotating IP via gost…', 'rotating');
+        let previousIp = cachedPublicIp;
+        try {
+          previousIp = await fetchPublicIp(true);
+        } catch (_) {}
+        const helperResult = await callGostRotate();
+        const waited = await waitForIpChange(previousIp || helperResult?.previousIp);
+        if (waited.changed) {
+          await setTooManyWipeCount(0);
+          await notifyOverlay(tabId, 'New IP: ' + waited.ip, 'ok');
+        } else {
+          await notifyOverlay(tabId, 'IP unchanged after rotate', 'error');
+        }
+        sendResponse({ success: waited.changed, ...waited, helper: helperResult });
+      })().catch(async (err) => {
+        await notifyOverlay(tabId, 'Rotate failed: ' + err.message, 'error');
+        sendResponse({ success: false, error: err.message });
+      });
+      return true;
+    }
 
-  if (action === 'enableProxy') {
-    ensureProxy()
-      .then((started) => sendResponse({ success: true, proxy: started.proxy || started }))
-      .catch((err) => sendResponse({ success: false, error: err.message }));
-    return true;
-  }
-
-  if (action === 'disableProxy') {
-    rotateProxies.stop()
-      .then(() => {
-        proxyReady = null;
-        sendResponse({ success: true });
-      })
-      .catch((err) => sendResponse({ success: false, error: err.message }));
+    debugLog('proxy.action.disabled', { action }).then(() => {
+      sendResponse({
+        success: false,
+        skipped: true,
+        error: 'Use gost-rotate helper (FoxyProxy)'
+      });
+    });
     return true;
   }
 
@@ -347,8 +388,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
-ensureProxy()
-  .then(() => fetchPublicIp())
+releaseChromeProxy()
+  .then(() => fetchPublicIp(true))
   .catch(() => {});
 
-console.log('[fanika] Background ready');
+console.log('[fanika] Ready — Too Many: wipe×3 then gost rotate @ :9999');

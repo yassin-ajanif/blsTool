@@ -1,0 +1,10 @@
+{
+  "name": "gost-rotate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local gost restart trigger for Fanika IP rotation",
+  "main": "rotate-server.js",
+  "scripts": {
+    "start": "node rotate-server.js"
+  }
+}

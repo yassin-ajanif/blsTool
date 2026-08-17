@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Fanika — Rotate Proxies</title>
+  <title>Fanika BLS</title>
   <style>
     body {
       font: 13px/1.4 system-ui, sans-serif;
@@ -23,17 +23,21 @@
     #status { margin-top: 8px; font-size: 12px; white-space: pre-wrap; }
     .ok { color: #1565c0; }
     .err { color: #c62828; }
+    .hint { color: #666; font-size: 11px; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <h1>Rotate proxies</h1>
+  <h1>Fanika BLS</h1>
   <div class="row"><span class="label">IP</span><div id="ip">…</div></div>
+  <!-- Proxy tunnel UI — DISABLED (gost + FoxyProxy)
   <div class="row"><span class="label">Session</span><div id="session">…</div></div>
   <button id="start">Start tunnel</button>
   <button id="rotate">Rotate proxy</button>
+  -->
   <button id="login">Open BLS login</button>
   <button id="openLog">Open debug log</button>
   <div id="status"></div>
+  <p class="hint">Proxy: FoxyProxy → :8888. Run <code>gost-rotate</code> on :9999. Too Many: wipe×3 then rotate.</p>
   <script src="popup.js"></script>
 </body>
 </html>

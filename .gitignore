@@ -23,6 +23,7 @@ npm-debug.log*
 .env.local
 .env.*.local
 **/fanika script/.env
+gost-rotate/.env
 
 # API keys and sensitive data
 config.json

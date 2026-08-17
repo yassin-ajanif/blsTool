@@ -2,14 +2,9 @@
   "manifest_version": 3,
   "name": "Fanika BLS",
   "version": "0.1.0",
-  "description": "Fanika clone — step 1: Chrome IPRoyal proxy, login, Too Many wipe+rotate+reload",
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
+  "description": "Fanika — BLS login cookie wipe (proxy via gost + FoxyProxy)",
   "action": {
-    "default_title": "Fanika — Rotate proxies",
+    "default_title": "Fanika BLS",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -30,6 +25,8 @@
     "<all_urls>",
     "https://www.blsspainmorocco.net/*",
     "https://ipv4.icanhazip.com/*",
+    "http://127.0.0.1:9999/*",
+    "http://localhost:9999/*",
     "http://geo.iproyal.com/*",
     "https://geo.iproyal.com/*"
   ],
@@ -43,6 +40,7 @@
       ],
       "js": [
         "step-1-login/ip-overlay.js",
+        "step-1-login/login-cookie-wipe.js",
         "step-1-login/handle-too-many.js"
       ],
       "run_at": "document_idle"
