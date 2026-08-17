@@ -28,7 +28,7 @@
       truecaptcha: { enabled: true, userId: '', apiKey: '' },
       servercaptcha: { enabled: false, endpoint: '' }
     },
-    redirects: { pageRedirectMs: 500 }
+    redirects: { pageRedirectMs: 0 }
   };
 
   class FanikaClientManager {

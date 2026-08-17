@@ -3,7 +3,7 @@
  * Too Many: wipe up to 3 times → still 429 → gost helper rotate → wipe → login.
  * chrome.proxy disabled — FoxyProxy + gost-rotate.
  */
-importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js');
+importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js', 'shared/new-appointment-redirect.js');
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
@@ -491,7 +491,24 @@ async function injectVisaTypeOnTab(tabId) {
   }
 }
 
+const redirectCooldown = new Map();
+
+function maybeInterceptNewAppointment(tabId, url) {
+  if (!url || !fanikaRedirect?.shouldRedirectToNewAppointment(url)) return;
+  const now = Date.now();
+  const last = redirectCooldown.get(tabId) || 0;
+  if (now - last < 600) return;
+  redirectCooldown.set(tabId, now);
+  const target = fanikaRedirect.newAppointmentUrl(url);
+  debugLog('redirect.intercept', { tabId, from: url, to: target });
+  chrome.tabs.update(tabId, { url: target });
+}
+
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  const url = info.url || tab.url;
+  if (info.status === 'loading' && url) {
+    maybeInterceptNewAppointment(tabId, url);
+  }
   if (info.status !== 'complete') return;
   if (!isVisaTypeUrl(tab.url)) return;
   injectVisaTypeOnTab(tabId);

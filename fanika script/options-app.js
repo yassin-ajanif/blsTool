@@ -197,7 +197,7 @@ async function loadSettingsUI() {
   document.getElementById('submit-captcha-ms').value = s.submitPages?.loginCaptchaPageMs ?? 0;
   document.getElementById('submit-visatype').checked = !!s.submitPages?.visaTypePage;
   document.getElementById('submit-visatype-ms').value = s.submitPages?.visaTypePageMs ?? 0;
-  document.getElementById('redirect-ms').value = s.redirects?.pageRedirectMs ?? 500;
+  document.getElementById('redirect-ms').value = s.redirects?.pageRedirectMs ?? 0;
 }
 
 document.getElementById('save-settings-btn').addEventListener('click', async () => {

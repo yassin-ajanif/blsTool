@@ -33,12 +33,17 @@
       return p.includes('/appointment/newappointment') && !this.hasCaptchaUi();
     },
     shouldGoNewAppointment() {
+      if (window.fanikaRedirect) {
+        return window.fanikaRedirect.shouldRedirectToNewAppointment(location.href);
+      }
       const p = path();
       return (
         p.includes('/home/index') ||
         p.includes('logincaptchasubmit') ||
         p.includes('loginsubmit') ||
-        p.includes('/account/changepassword')
+        p.includes('/account/changepassword') ||
+        p === '/mar' ||
+        p === '/'
       );
     }
   };
