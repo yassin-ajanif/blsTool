@@ -24,6 +24,7 @@ npm-debug.log*
 .env.*.local
 **/fanika script/.env
 gost-rotate/.env
+ProxyRotationExtension/.env
 
 # API keys and sensitive data
 config.json

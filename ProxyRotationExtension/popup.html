@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Proxy Rotation Lab</title>
+    <style>
+      body {
+        font: 13px/1.4 system-ui, sans-serif;
+        width: 280px;
+        margin: 0;
+        padding: 12px;
+      }
+      button {
+        width: 100%;
+        padding: 8px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button + button {
+        margin-top: 6px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      pre {
+        margin: 10px 0 0;
+        padding: 8px;
+        background: #111;
+        color: #d6ffd6;
+        font-size: 11px;
+        white-space: pre-wrap;
+        min-height: 72px;
+      }
+      .hint {
+        color: #666;
+        font-size: 11px;
+        margin: 8px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="btn">Rotate</button>
+    <button id="disconnect">Disconnect</button>
+    <pre id="out">Turn off FoxyProxy + Fanika first.
+Then click Rotate.</pre>
+    <p class="hint">Wipe cookies, then a new IPRoyal _session- id. Opens icanhazip.</p>
+    <script src="popup.js"></script>
+  </body>
+</html>
