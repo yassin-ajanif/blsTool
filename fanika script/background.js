@@ -1,7 +1,6 @@
 /**
  * Fanika background
- * Too Many: wipe up to 3 times → still 429 → gost helper rotate → wipe → login.
- * chrome.proxy disabled — FoxyProxy + gost-rotate.
+ * Too Many: wipe up to 3 times → still 429 → wipe + rotate Chrome proxy → login.
  */
 importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js', 'shared/new-appointment-redirect.js');
 
@@ -10,10 +9,6 @@ const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
 const TRY_STORE_KEY = 'fanikaLoginSubmitTries';
 const TOO_MANY_WIPE_KEY = 'fanikaTooManyWipeCount';
 const MAX_WIPES_BEFORE_ROTATE = 3;
-const GOST_HELPER_URL = 'http://127.0.0.1:9999';
-const ROTATE_IP_MAX_ATTEMPTS = 12;
-const ROTATE_IP_RETRY_MS = 1500;
-
 let cachedPublicIp = null;
 let ipFetchPromise = null;
 
@@ -44,16 +39,6 @@ async function ensureTrueCaptchaFromEnv() {
     await debugLog('truecaptcha.env.loaded', { userIdPresent: Boolean(userId), apiKeyPresent: Boolean(apiKey) });
   } catch (err) {
     await debugLog('truecaptcha.env.load.fail', { error: err.message });
-  }
-}
-
-/** Drop leftover chrome.proxy so FoxyProxy / gost can own the tunnel. */
-async function releaseChromeProxy() {
-  try {
-    await chrome.proxy.settings.clear({ scope: 'regular' });
-    await debugLog('proxy.released', { reason: 'gost-foxyproxy-manual' });
-  } catch (err) {
-    await debugLog('proxy.release.fail', { error: err.message });
   }
 }
 
@@ -172,39 +157,6 @@ async function openLogin() {
   };
 }
 
-/** Ask gost-rotate helper to restart gost with a new sticky session. */
-async function callGostRotate() {
-  await debugLog('gost.rotate.request', { url: GOST_HELPER_URL + '/rotate' });
-  const res = await fetch(GOST_HELPER_URL + '/rotate', {
-    method: 'POST',
-    cache: 'no-store'
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(body.error || `gost helper HTTP ${res.status}`);
-  }
-  await debugLog('gost.rotate.response', body);
-  return body;
-}
-
-/** After gost restarts, poll icanhazip via FoxyProxy until IP differs. */
-async function waitForIpChange(previousIp) {
-  let lastIp = previousIp;
-  for (let i = 1; i <= ROTATE_IP_MAX_ATTEMPTS; i++) {
-    await sleep(ROTATE_IP_RETRY_MS);
-    try {
-      const ip = await fetchPublicIp(true);
-      lastIp = ip;
-      if (previousIp && ip && ip !== previousIp) {
-        return { changed: true, previousIp, ip, attempt: i };
-      }
-    } catch (err) {
-      await debugLog('gost.waitIp.fail', { attempt: i, error: err.message });
-    }
-  }
-  return { changed: false, previousIp, ip: lastIp, attempt: ROTATE_IP_MAX_ATTEMPTS };
-}
-
 async function handleTooMany(tabId, pageUrl) {
   const url = pageUrl || '';
   let wipeStreak = await getTooManyWipeCount();
@@ -212,30 +164,13 @@ async function handleTooMany(tabId, pageUrl) {
 
   // Already wiped 3 times and still on 429 → rotate IP first
   if (wipeStreak >= MAX_WIPES_BEFORE_ROTATE) {
-    await notifyOverlay(tabId, 'Rotating IP via gost…', 'rotating');
-    let previousIp = cachedPublicIp;
+    await notifyOverlay(tabId, 'Rotating IP…', 'rotating');
+    let waited = null;
     try {
-      previousIp = await fetchPublicIp(true);
-    } catch (_) {}
-
-    let helperResult = null;
-    try {
-      helperResult = await callGostRotate();
-      if (helperResult?.ip) {
-        // helper saw a change through gost; Chrome may need a moment
-        await notifyOverlay(
-          tabId,
-          'IP rotating… ' + (helperResult.previousIp || '?') + ' → ' + helperResult.ip,
-          'rotating'
-        );
-      }
+      waited = await rotateProxies.rotateUntilIpChanges();
     } catch (err) {
-      await debugLog('gost.rotate.fail', { error: err.message });
-      await notifyOverlay(
-        tabId,
-        'Rotate failed — is gost-rotate running? ' + err.message,
-        'error'
-      );
+      await debugLog('proxy.rotate.fail', { error: err.message });
+      await notifyOverlay(tabId, 'Rotate failed — ' + err.message, 'error');
       return {
         success: false,
         action: 'rotateFailed',
@@ -244,15 +179,13 @@ async function handleTooMany(tabId, pageUrl) {
       };
     }
 
-    await notifyOverlay(tabId, 'Waiting for new IP…', 'rotating');
-    const waited = await waitForIpChange(previousIp || helperResult?.previousIp);
     if (!waited.changed) {
       await notifyOverlay(
         tabId,
-        'IP unchanged after rotate (' + (waited.ip || '?') + ') — check gost',
+        'IP unchanged after rotate (' + (waited.ip || '?') + ')',
         'error'
       );
-      await debugLog('tooMany.ipUnchanged', waited);
+      await debugLog('proxy.rotate.unchanged', waited);
       return {
         success: false,
         action: 'ipUnchanged',
@@ -262,17 +195,16 @@ async function handleTooMany(tabId, pageUrl) {
     }
 
     cachedPublicIp = waited.ip;
-    await notifyOverlay(tabId, 'New IP: ' + waited.ip + ' — wiping cookies…', 'ok');
+    await notifyOverlay(tabId, 'New IP: ' + waited.ip + ' — reopening login…', 'ok');
     await setTooManyWipeCount(0);
-    const count = await wipeAllCookies();
     await goToLogin(tabId);
-    await debugLog('tooMany.rotated', { ...waited, cookiesWiped: count });
+    await debugLog('tooMany.rotated', waited);
     return {
       success: true,
       action: 'rotated',
       previousIp: waited.previousIp,
       ip: waited.ip,
-      count,
+      count: 0,
       redirected: LOGIN_URL
     };
   }
@@ -386,24 +318,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     action === 'disableProxy' ||
     action === 'rotateProxiesStatus'
   ) {
-    // Manual rotate via gost helper (optional)
     if (action === 'rotateProxy' || action === 'rotateProxies') {
       const tabId = sender?.tab?.id;
       (async () => {
-        await notifyOverlay(tabId, 'Rotating IP via gost…', 'rotating');
-        let previousIp = cachedPublicIp;
-        try {
-          previousIp = await fetchPublicIp(true);
-        } catch (_) {}
-        const helperResult = await callGostRotate();
-        const waited = await waitForIpChange(previousIp || helperResult?.previousIp);
+        await notifyOverlay(tabId, 'Rotating IP…', 'rotating');
+        const waited = await rotateProxies.rotateUntilIpChanges();
         if (waited.changed) {
+          cachedPublicIp = waited.ip;
           await setTooManyWipeCount(0);
           await notifyOverlay(tabId, 'New IP: ' + waited.ip, 'ok');
         } else {
           await notifyOverlay(tabId, 'IP unchanged after rotate', 'error');
         }
-        sendResponse({ success: waited.changed, ...waited, helper: helperResult });
+        sendResponse({ success: waited.changed, ...waited });
       })().catch(async (err) => {
         await notifyOverlay(tabId, 'Rotate failed: ' + err.message, 'error');
         sendResponse({ success: false, error: err.message });
@@ -415,7 +342,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({
         success: false,
         skipped: true,
-        error: 'Use gost-rotate helper (FoxyProxy)'
+        error: 'Unsupported proxy action'
       });
     });
     return true;
@@ -504,11 +431,13 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   injectVisaTypeOnTab(tabId, url || tab.url);
 });
 
-releaseChromeProxy()
-  .then(() => fetchPublicIp(true))
+rotateProxies.start()
+  .then((res) => {
+    if (res?.ip) cachedPublicIp = res.ip;
+  })
   .catch(() => {});
 
-console.log('[fanika] Ready — Too Many: wipe×3 then gost rotate @ :9999');
+console.log('[fanika] Ready — Too Many: wipe×3 then Chrome proxy rotate');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});

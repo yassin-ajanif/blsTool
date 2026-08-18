@@ -1,13 +1,13 @@
 /**
  * RotateProxies service
- * Chrome-only IPRoyal tunnel: enable proxy, rotate sticky session, verify public IP.
+ * Chrome-only IPRoyal tunnel: wipe site data, rotate sticky session, verify public IP.
  *
  * Requires: load-env.js, proxy-rotation.js (importScripts before this file)
  */
 (function (global) {
   const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
-  const DEFAULT_MAX_ATTEMPTS = 20;
-  const DEFAULT_RETRY_MS = 400;
+  const DEFAULT_MAX_ATTEMPTS = 8;
+  const DEFAULT_RETRY_MS = 800;
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,11 +29,31 @@
       return Number.isFinite(n) && n >= 0 ? n : DEFAULT_RETRY_MS;
     }
 
+    async wipeSiteData() {
+      await chrome.browsingData.remove(
+        { since: 0 },
+        {
+          cookies: true,
+          localStorage: true,
+          indexedDB: true,
+          serviceWorkers: true,
+          cacheStorage: true,
+          fileSystems: true
+        }
+      );
+      if (typeof debugLog === 'function') {
+        debugLog('proxy.wipe.siteData', { since: 0 });
+      }
+    }
+
     async start() {
       await proxyRotation.init();
       const config = await proxyRotation.enable();
       console.log('[fanika/rotate-proxies] tunnel on', config.host + ':' + config.port, 'session=', config.sessionId);
-      return { success: true, proxy: this._safeProxy(config) };
+      try {
+        await this.verifyIp();
+      } catch (_) {}
+      return { success: true, ip: this.lastIp, proxy: this._safeProxy(config) };
     }
 
     async stop() {
@@ -41,10 +61,14 @@
       return { success: true };
     }
 
-    async rotate() {
+    async rotate(opts) {
+      const wipe = !opts || opts.wipe !== false;
+      if (wipe) await this.wipeSiteData();
+
       const previousSession = proxyRotation.sessionId;
       const previousIp = this.lastIp;
       const config = await proxyRotation.rotate();
+      await proxyRotation.enable();
       this.lastRotateAt = Date.now();
       console.log('[fanika/rotate-proxies] rotated', previousSession, '→', config.sessionId);
       return {
@@ -64,8 +88,8 @@
       return { success: true, ip, sessionId: proxyRotation.sessionId };
     }
 
-    async rotateAndVerify() {
-      const rotated = await this.rotate();
+    async rotateAndVerify(opts) {
+      const rotated = await this.rotate(opts);
       let ipResult = { success: false, ip: null };
       try {
         ipResult = await this.verifyIp();
@@ -76,7 +100,7 @@
         rotated.previousIp && ipResult.ip && rotated.previousIp !== ipResult.ip
       );
       return {
-        success: true,
+        success: Boolean(ipResult.ip),
         changed,
         attempts: 1,
         previousIp: rotated.previousIp,
@@ -89,7 +113,7 @@
     }
 
     /**
-     * Keep rotating until icanhazip IP differs. Does not reload pages.
+     * Wipe once, then keep rotating until icanhazip IP differs. Does not reload pages.
      */
     async rotateUntilIpChanges() {
       if (!this.lastIp) {
@@ -101,6 +125,7 @@
       }
 
       const previousIp = this.lastIp;
+      await this.wipeSiteData();
       const maxAttempts = this.maxAttempts;
       let last = {
         success: false,
@@ -113,7 +138,7 @@
       };
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        last = await this.rotateAndVerify();
+        last = await this.rotateAndVerify({ wipe: false });
         last.attempts = attempt;
         last.previousIp = previousIp;
         last.changed = Boolean(previousIp && last.ip && previousIp !== last.ip);
@@ -139,8 +164,9 @@
           });
         }
 
-        if (last.changed) {
+        if (last.changed || (!previousIp && last.ip)) {
           last.success = true;
+          if (!previousIp && last.ip) last.changed = true;
           return last;
         }
 
@@ -149,7 +175,7 @@
 
       last.success = false;
       last.changed = false;
-      last.error = 'IP did not change after ' + maxAttempts + ' rotates — not reloading';
+      last.error = 'IP did not change after ' + maxAttempts + ' rotates';
       return last;
     }
 

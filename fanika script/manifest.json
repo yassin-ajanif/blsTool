@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fanika BLS",
   "version": "0.2.8",
-  "description": "Fanika — BLS booking bot (login, captcha, visa type) + cookie wipe / gost rotate",
+  "description": "Fanika — BLS booking bot (login, captcha, visa type) + cookie wipe / proxy rotate",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",
@@ -19,6 +19,7 @@
     "proxy",
     "webRequest",
     "webRequestAuthProvider",
+    "browsingData",
     "storage",
     "scripting"
   ],
@@ -27,8 +28,6 @@
     "https://www.blsspainmorocco.net/*",
     "https://blsspainmorocco.net/*",
     "https://ipv4.icanhazip.com/*",
-    "http://127.0.0.1:9999/*",
-    "http://localhost:9999/*",
     "https://api.apitruecaptcha.org/*"
   ],
   "background": {

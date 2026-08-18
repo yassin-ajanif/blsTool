@@ -1,6 +1,6 @@
 /**
  * Step 1 — Too Many handler
- * Wipe×3 → still 429 → background rotates gost → wipe → login.
+ * Wipe×3 → still 429 → background rotates Chrome proxy → login.
  * Overlay shows wipe / rotating status.
  */
 (function () {
@@ -61,7 +61,7 @@
 
       if (response?.action === 'rotateFailed' || response?.action === 'ipUnchanged') {
         setLocalOverlay(
-          response.error || 'IP rotate failed — leave this page and fix gost-rotate',
+          response.error || 'IP rotate failed — retry in a moment',
           'error'
         );
         // Allow retry after a pause

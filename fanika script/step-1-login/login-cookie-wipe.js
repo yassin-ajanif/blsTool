@@ -1,5 +1,5 @@
 /**
- * Step 1 — Login cookie wipe (no IP rotation; gost is manual)
+ * Step 1 — Login cookie wipe (proxy rotation is handled in the background)
  *
  * - /account/login: wipe cookies once, then open login again
  * - form submit → LoginSubmit: wipe cookies before the POST continues

@@ -6,6 +6,10 @@
  * Permissions: proxy, webRequest, webRequestAuthProvider
  */
 (function (global) {
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   function randomSessionId(len = 10) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let out = '';
@@ -59,8 +63,8 @@
     }
 
     get lifetime() {
-      const n = Number(this.env?.PROXY_LIFETIME);
-      return Number.isFinite(n) && n > 0 ? n : 3600;
+      const raw = String(this.env?.PROXY_LIFETIME || '').trim();
+      return raw || '30m';
     }
 
     get country() {
@@ -96,22 +100,32 @@
     _ensureAuthListener() {
       if (this._authListener) return;
 
-      this._authListener = (details) => {
-        if (!details.isProxy || !this.enabled) return {};
+      this._authListener = (details, callback) => {
+        if (!details.isProxy || !this.enabled) {
+          callback({});
+          return;
+        }
         const { username, password } = this.getCredentials();
-        return { authCredentials: { username, password } };
+        if (typeof debugLog === 'function') {
+          debugLog('proxy.auth.407', {
+            host: details.challenger?.host,
+            session: this.sessionId
+          });
+        }
+        callback({ authCredentials: { username, password } });
       };
 
       chrome.webRequest.onAuthRequired.addListener(
         this._authListener,
         { urls: ['<all_urls>'] },
-        ['blocking']
+        ['asyncBlocking']
       );
     }
 
     async enable() {
       if (!this.env) await this.init();
       this._ensureAuthListener();
+      this.enabled = true;
 
       const { host, port } = this.getConfig();
       await chrome.proxy.settings.set({
@@ -128,8 +142,6 @@
         },
         scope: 'regular'
       });
-
-      this.enabled = true;
       if (typeof debugLog === 'function') {
         debugLog('proxy.enable', { host, port, session: this.sessionId });
       }
@@ -140,7 +152,10 @@
     async disable() {
       await chrome.proxy.settings.clear({ scope: 'regular' });
       this.enabled = false;
-      console.log('[fanika/proxy] Disabled (Chrome proxy cleared)');
+      if (typeof debugLog === 'function') {
+        debugLog('proxy.disable', {});
+      }
+      console.log('[fanika/proxy] Disabled');
       return { success: true };
     }
 
@@ -151,15 +166,19 @@
     async rotate() {
       if (!this.env) await this.init();
       this.sessionId = randomSessionId();
+      this._ensureAuthListener();
+      this.enabled = true;
       if (typeof debugLog === 'function') {
         debugLog('proxy.rotate.session', { sessionId: this.sessionId });
       }
       console.log('[fanika/proxy] Rotating session →', this.sessionId);
-      await this.enable();
+      await chrome.proxy.settings.clear({ scope: 'regular' });
+      await sleep(250);
       return this.getConfig();
     }
   }
 
+  global.sleep = global.sleep || sleep;
   global.randomSessionId = randomSessionId;
   global.buildRotatingPassword = buildRotatingPassword;
   global.ProxyRotation = ProxyRotation;
