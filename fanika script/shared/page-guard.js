@@ -30,6 +30,25 @@
     isVisaType() {
       return path().includes('/appointment/visatype');
     },
+    isSlotSelection() {
+      return path().includes('/appointment/slotselection');
+    },
+    isRestrictedBanner() {
+      const h1 = (document.querySelector('h1')?.textContent || '').trim();
+      return (
+        h1.includes('Too Many') ||
+        h1.includes('Temporarily Restricted') ||
+        /service\s+unavailable/i.test(h1) ||
+        /access\s+denied/i.test(h1)
+      );
+    },
+    /** Blank / rate-limited slotselection — keep reloading. */
+    isCalendarHoldPage() {
+      if (!this.isSlotSelection()) return false;
+      if (this.isRestrictedBanner()) return true;
+      const hasChrome = !!(document.querySelector('header') || document.querySelector('footer'));
+      return !hasChrome;
+    },
     shouldGoNewAppointment() {
       if (window.fanikaRedirect) {
         return window.fanikaRedirect.shouldRedirectToNewAppointment(location.href);

@@ -14,6 +14,7 @@
     '/mar/appointment/newappointment',
     '/mar/appointment/visatype',
     '/mar/appointment/appointmentcaptcha',
+    '/mar/appointment/slotselection',
     '/mar/account/login',
     '/mar/newcaptcha/logincaptcha'
   ];

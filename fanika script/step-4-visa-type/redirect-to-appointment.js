@@ -14,6 +14,15 @@
   async function maybeRedirect() {
     if (!window.fanikaRedirect?.shouldRedirectToNewAppointment(location.href)) return false;
 
+    // Don't fight slot hold — background/early bounce owns kick-outs.
+    const holdCheck = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ action: 'slotHoldBounceIfNeeded', url: location.href }, (res) => {
+        if (chrome.runtime.lastError) resolve(null);
+        else resolve(res);
+      });
+    });
+    if (holdCheck?.bounced) return true;
+
     const target = window.fanikaRedirect?.newAppointmentUrl(location.href) ||
       location.origin + '/MAR/appointment/newappointment';
     const delay = await getRedirectDelay();

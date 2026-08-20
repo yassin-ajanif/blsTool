@@ -11,6 +11,8 @@
     info: { color: '#0b1f14', bg: 'rgba(232,245,233,0.95)', border: '#2e7d32' },
     wipe: { color: '#1a237e', bg: 'rgba(227,242,253,0.96)', border: '#1565c0' },
     rotating: { color: '#e65100', bg: 'rgba(255,243,224,0.96)', border: '#ef6c00' },
+    reload: { color: '#e65100', bg: 'rgba(255,243,224,0.96)', border: '#ef6c00' },
+    restricted: { color: '#b71c1c', bg: 'rgba(255,235,238,0.96)', border: '#c62828' },
     ok: { color: '#1b5e20', bg: 'rgba(232,245,233,0.96)', border: '#2e7d32' },
     error: { color: '#b71c1c', bg: 'rgba(255,235,238,0.96)', border: '#c62828' }
   };

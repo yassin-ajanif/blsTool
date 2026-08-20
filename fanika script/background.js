@@ -2,7 +2,14 @@
  * Fanika background
  * Too Many: wipe up to 3 times → still 429 → wipe + rotate Chrome proxy → login.
  */
-importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'services/rotate-proxies.js', 'shared/new-appointment-redirect.js');
+importScripts(
+  'load-env.js',
+  'services/debugger.js',
+  'proxy-rotation.js',
+  'services/rotate-proxies.js',
+  'shared/new-appointment-redirect.js',
+  'step-5-slot-selection/slot-hold-guard.js'
+);
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
@@ -190,6 +197,35 @@ async function openLogin() {
 
 async function handleTooMany(tabId, pageUrl) {
   const url = pageUrl || '';
+
+  // Slot-hold fight owns Too Many: restart VisaType (or slots fallback), never wipe → login.
+  const hold = tabId != null ? await fanikaSlotHold.getHold(tabId) : null;
+  if (hold?.active && (hold.visaTypeUrl || hold.url)) {
+    await debugLog('tooMany.skip.slotHold', {
+      tabId,
+      url,
+      backTo: hold.visaTypeUrl || hold.url,
+      via: hold.visaTypeUrl ? 'visaType' : 'slots'
+    });
+    const bounced = await fanikaSlotHold.recoverFromTooMany(tabId, url);
+    await notifyOverlay(
+      tabId,
+      bounced
+        ? hold.visaTypeUrl
+          ? 'Too Many — back to Visa Type (restart)'
+          : 'Too Many — back to slots'
+        : 'Slot hold active',
+      'error'
+    );
+    return {
+      success: true,
+      action: bounced ? 'bouncedToVisaOrSlots' : 'slotHoldActive',
+      holdUrl: hold.url,
+      visaTypeUrl: hold.visaTypeUrl || null,
+      redirected: bounced ? hold.visaTypeUrl || hold.url : null
+    };
+  }
+
   let wipeStreak = await getTooManyWipeCount();
   await debugLog('tooMany.start', { tabId, url, wipeStreak });
 
@@ -299,6 +335,92 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     notifyOverlay(tabId, message.text, message.phase)
       .then(() => sendResponse({ success: true }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldRemember') {
+    const tabId = sender?.tab?.id;
+    fanikaSlotHold
+      .rememberSlotHold(tabId, message.url || sender?.tab?.url)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldRememberVisa') {
+    const tabId = sender?.tab?.id;
+    fanikaSlotHold
+      .rememberVisaType(tabId, message.url || sender?.tab?.url)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldRecoverVisa') {
+    const tabId = sender?.tab?.id;
+    fanikaSlotHold
+      .recoverFromTooMany(tabId, message.url || sender?.tab?.url)
+      .then((ok) => sendResponse({ success: true, bounced: ok }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldClear') {
+    const tabId = sender?.tab?.id ?? message.tabId;
+    fanikaSlotHold
+      .clearSlotHold(tabId)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldBounceIfNeeded') {
+    const tabId = sender?.tab?.id;
+    (async () => {
+      const hold = await fanikaSlotHold.getHold(tabId);
+      if (!hold?.active || !(hold.visaTypeUrl || hold.url)) {
+        sendResponse({ success: true, bounced: false, holdActive: false });
+        return;
+      }
+      const from = message.url || sender?.tab?.url || '';
+      if (fanikaSlotHold.isSlotSelectionUrl(from) || fanikaSlotHold.isVisaTypeUrl(from)) {
+        sendResponse({
+          success: true,
+          bounced: false,
+          holdActive: true,
+          url: hold.visaTypeUrl || hold.url
+        });
+        return;
+      }
+      const tooManyKick = fanikaSlotHold.looksLikeTooManyKickout(from);
+      const shouldBounce =
+        fanikaSlotHold.isKickoutUrl(from) || !fanikaSlotHold.isSlotSelectionUrl(from);
+      if (!shouldBounce) {
+        sendResponse({ success: true, bounced: false, holdActive: true });
+        return;
+      }
+      const target = tooManyKick
+        ? hold.visaTypeUrl || hold.url
+        : hold.url || hold.visaTypeUrl;
+      await debugLog('slotHold.earlyBounce', {
+        tabId,
+        from,
+        backTo: target,
+        tooManyKick,
+        via: tooManyKick && hold.visaTypeUrl ? 'visaType' : 'slots'
+      });
+      sendResponse({
+        success: true,
+        bounced: true,
+        holdActive: true,
+        url: target
+      });
+      if (tooManyKick) {
+        await fanikaSlotHold.recoverFromTooMany(tabId, from);
+      } else {
+        await fanikaSlotHold.bounceToSlots(tabId, from);
+      }
+    })().catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
@@ -420,6 +542,9 @@ async function injectVisaTypeOnTab(tabId, pageUrl) {
   if (!tabId || visaTypeInjectInFlight.has(tabId)) return;
   visaTypeInjectInFlight.add(tabId);
   try {
+    if (pageUrl) {
+      await fanikaSlotHold.rememberVisaType(tabId, pageUrl);
+    }
     await debugLog('visaType.inject.main.start', { tabId, url: pageUrl });
     await chrome.scripting.executeScript({
       target: { tabId },
@@ -445,8 +570,13 @@ async function injectVisaTypeOnTab(tabId, pageUrl) {
 
 const redirectCooldown = new Map();
 
-function maybeInterceptNewAppointment(tabId, url) {
+async function maybeInterceptNewAppointment(tabId, url) {
   if (!url || !fanikaRedirect?.shouldRedirectToNewAppointment(url)) return;
+  const hold = await fanikaSlotHold.getHold(tabId);
+  if (hold?.active) {
+    await debugLog('redirect.skip.slotHold', { tabId, url });
+    return;
+  }
   const now = Date.now();
   const last = redirectCooldown.get(tabId) || 0;
   if (now - last < 600) return;
@@ -466,13 +596,15 @@ chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   injectVisaTypeOnTab(tabId, url || tab.url);
 });
 
+fanikaSlotHold.installSlotHoldGuard();
+
 rotateProxies.start()
   .then((res) => {
     if (res?.ip) cachedPublicIp = res.ip;
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — Too Many: wipe×3 then Chrome proxy rotate');
+console.log('[fanika] Ready — slot hold: block kick-out + 5s reload; Too Many login: wipe×3 then proxy rotate');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});
