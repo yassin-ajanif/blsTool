@@ -81,17 +81,20 @@
     status.textContent = text;
   }
 
+  function formatIpLabel(response) {
+    if (!response?.success || !response.ip) {
+      return 'IP: ' + (response?.error || 'unavailable');
+    }
+    return response.city ? 'IP: ' + response.ip + ' · ' + response.city : 'IP: ' + response.ip;
+  }
+
   function requestIp() {
     chrome.runtime.sendMessage({ action: 'getPublicIp' }, (response) => {
       if (chrome.runtime.lastError) {
         setOverlayIp('IP: unavailable');
         return;
       }
-      if (response?.success && response.ip) {
-        setOverlayIp('IP: ' + response.ip);
-      } else {
-        setOverlayIp('IP: ' + (response?.error || 'unavailable'));
-      }
+      setOverlayIp(formatIpLabel(response));
     });
   }
 

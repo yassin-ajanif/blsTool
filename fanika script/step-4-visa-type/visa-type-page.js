@@ -127,7 +127,72 @@
     };
   }
 
-  function submitForm() {
+  function findVisibleConfirmationModal() {
+    const ids = ['PremiumTypeModel', 'MobileBioTypeModel', 'familyDisclaimer'];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (
+        el.classList.contains('show') ||
+        el.getAttribute('aria-hidden') === 'false' ||
+        (typeof jQuery !== 'undefined' && jQuery(el).is(':visible'))
+      ) {
+        return el;
+      }
+    }
+    return null;
+  }
+
+  function clickModalAccept(modal) {
+    if (!modal) return false;
+    const buttons = modal.querySelectorAll('.modal-footer button');
+    for (const btn of buttons) {
+      if (/^accept$/i.test((btn.textContent || '').trim())) {
+        btn.click();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Visa type only — Accept Premium / Family / Mobile Bio dialogs, then Submit. */
+  function handleConfirmationsThenSubmit() {
+    let ticks = 0;
+    let clearTicks = 0;
+    const maxTicks = 60;
+
+    function tick() {
+      ticks++;
+      const modal = findVisibleConfirmationModal();
+      if (modal) {
+        clearTicks = 0;
+        const title = modal.querySelector('.modal-title')?.textContent?.trim() || modal.id;
+        dbg('visaType.modal.visible', { id: modal.id, title, tick: ticks });
+        if (clickModalAccept(modal)) {
+          dbg('visaType.modal.accept', { id: modal.id, title });
+          if (typeof window.fanikaOverlay === 'function') {
+            window.fanikaOverlay('Accepted: ' + title, 'ok');
+          }
+          setTimeout(tick, 400);
+          return;
+        }
+        dbg('visaType.modal.acceptFail', { id: modal.id, title });
+        return;
+      }
+
+      clearTicks++;
+      if (clearTicks >= 3 || ticks >= maxTicks) {
+        dbg('visaType.modal.done', { ticks, clearTicks });
+        submitFormNow();
+        return;
+      }
+      setTimeout(tick, 100);
+    }
+
+    tick();
+  }
+
+  function submitFormNow() {
     if (!settings?.submitPages?.visaTypePage) {
       dbg('visaType.submit.skip', { reason: 'auto-submit disabled in settings' });
       return;
@@ -137,6 +202,11 @@
       dbg('visaType.submit.fail', { reason: 'btnSubmit not found' });
       return;
     }
+    if (findVisibleConfirmationModal()) {
+      dbg('visaType.submit.blocked', { reason: 'confirmation modal still open' });
+      handleConfirmationsThenSubmit();
+      return;
+    }
     const delay = settings.submitPages.visaTypePageMs || 0;
     dbg('visaType.submit.start', { delayMs: delay });
     if (delay > 0 && typeof window.startCountdown === 'function') {
@@ -144,6 +214,10 @@
     } else {
       submitButton.click();
     }
+  }
+
+  function submitForm() {
+    handleConfirmationsThenSubmit();
   }
 
   function fillForm() {

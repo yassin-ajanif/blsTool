@@ -28,13 +28,27 @@
       truecaptcha: { enabled: true, userId: '', apiKey: '' },
       servercaptcha: { enabled: false, endpoint: '' }
     },
-    redirects: { pageRedirectMs: 0 }
+    redirects: { pageRedirectMs: 0 },
+    proxyCity: 'tetouan'
   };
 
   class FanikaClientManager {
     async loadClients() {
       const r = await chrome.storage.local.get([CLIENTS_KEY]);
-      return r[CLIENTS_KEY] || [];
+      let clients = r[CLIENTS_KEY] || [];
+      let changed = false;
+      const seen = new Set();
+      clients = clients.map((c) => {
+        let next = { ...c };
+        if (!next.id || seen.has(next.id)) {
+          next.id = uuid();
+          changed = true;
+        }
+        seen.add(next.id);
+        return next;
+      });
+      if (changed) await this.saveClients(clients);
+      return clients;
     }
 
     async saveClients(clients) {
@@ -101,7 +115,15 @@
     }
 
     async saveSettings(settings) {
-      await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+      const prev = await this.loadSettings();
+      await chrome.storage.local.set({
+        [SETTINGS_KEY]: {
+          ...prev,
+          ...settings,
+          submitPages: { ...prev.submitPages, ...(settings.submitPages || {}) },
+          redirects: { ...prev.redirects, ...(settings.redirects || {}) }
+        }
+      });
     }
 
     launchLogin(client) {

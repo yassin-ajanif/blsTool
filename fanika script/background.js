@@ -6,10 +6,12 @@ importScripts('load-env.js', 'services/debugger.js', 'proxy-rotation.js', 'servi
 
 const LOGIN_URL = 'https://www.blsspainmorocco.net/MAR/account/login';
 const IP_LOOKUP_URL = 'https://ipv4.icanhazip.com/';
+const IP_GEO_URL = 'https://ipwho.is/';
 const TRY_STORE_KEY = 'fanikaLoginSubmitTries';
 const TOO_MANY_WIPE_KEY = 'fanikaTooManyWipeCount';
 const MAX_WIPES_BEFORE_ROTATE = 3;
 let cachedPublicIp = null;
+let cachedIpGeo = { ip: null, city: null, country: null };
 let ipFetchPromise = null;
 
 async function ensureTrueCaptchaFromEnv() {
@@ -69,6 +71,35 @@ async function fetchPublicIp(force) {
 
   if (!force) ipFetchPromise = run;
   return run;
+}
+
+async function lookupIpCity(ip) {
+  if (!ip) return null;
+  if (cachedIpGeo.ip === ip && cachedIpGeo.city) return cachedIpGeo.city;
+
+  try {
+    const res = await fetch(IP_GEO_URL + encodeURIComponent(ip), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Geo lookup HTTP ${res.status}`);
+    const data = await res.json();
+    if (data?.success !== true) throw new Error(data?.message || 'Geo lookup failed');
+    cachedIpGeo = {
+      ip,
+      city: data.city || null,
+      country: data.country || null
+    };
+    await debugLog('ip.geo.ok', cachedIpGeo);
+    return cachedIpGeo.city;
+  } catch (err) {
+    await debugLog('ip.geo.fail', { ip, error: err.message });
+    cachedIpGeo = { ip, city: null, country: null };
+    return null;
+  }
+}
+
+async function getPublicIpInfo(force) {
+  const ip = await fetchPublicIp(force);
+  const city = await lookupIpCity(ip);
+  return { ip, city, country: cachedIpGeo.country };
 }
 
 function tryStore() {
@@ -195,7 +226,9 @@ async function handleTooMany(tabId, pageUrl) {
     }
 
     cachedPublicIp = waited.ip;
-    await notifyOverlay(tabId, 'New IP: ' + waited.ip + ' — reopening login…', 'ok');
+    await lookupIpCity(waited.ip);
+    const citySuffix = cachedIpGeo.city ? ' (' + cachedIpGeo.city + ')' : '';
+    await notifyOverlay(tabId, 'New IP: ' + waited.ip + citySuffix + ' — reopening login…', 'ok');
     await setTooManyWipeCount(0);
     await goToLogin(tabId);
     await debugLog('tooMany.rotated', waited);
@@ -298,9 +331,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (action === 'getPublicIp') {
-    fetchPublicIp(false)
-      .then((ip) => sendResponse({ success: true, ip }))
-      .catch((err) => sendResponse({ success: false, error: err.message, ip: null }));
+    getPublicIpInfo(false)
+      .then((info) => sendResponse({ success: true, ...info }))
+      .catch((err) => sendResponse({ success: false, error: err.message, ip: null, city: null }));
     return true;
   }
 
@@ -325,8 +358,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const waited = await rotateProxies.rotateUntilIpChanges();
         if (waited.changed) {
           cachedPublicIp = waited.ip;
+          await lookupIpCity(waited.ip);
           await setTooManyWipeCount(0);
-          await notifyOverlay(tabId, 'New IP: ' + waited.ip, 'ok');
+          const citySuffix = cachedIpGeo.city ? ' (' + cachedIpGeo.city + ')' : '';
+          await notifyOverlay(tabId, 'New IP: ' + waited.ip + citySuffix, 'ok');
         } else {
           await notifyOverlay(tabId, 'IP unchanged after rotate', 'error');
         }

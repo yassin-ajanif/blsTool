@@ -1,11 +1,15 @@
 /**
- * proxy-rotation.js — IPRoyal sticky session rotation for Fanika (Chrome only).
- * Does NOT use the OS network proxy. Uses chrome.proxy + proxy auth.
- *
- * Requires: load-env.js (importScripts before this file)
- * Permissions: proxy, webRequest, webRequestAuthProvider
+ * proxy-rotation.js — IPRoyal sticky session via chrome.proxy (no gost).
+ * City picked in Options → Settings; password bases live in .env.
  */
 (function (global) {
+  const CITY_ENV_KEYS = {
+    random: 'PROXY_PASSWORD_RANDOM',
+    tetouan: 'PROXY_PASSWORD_TETOUAN',
+    tangier: 'PROXY_PASSWORD_TANGIER',
+    casablanca: 'PROXY_PASSWORD_CASABLANCA'
+  };
+
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -19,28 +23,32 @@
     return out;
   }
 
-  /**
-   * Strip _session / _lifetime; keep _country (and any other base suffix).
-   * Append fresh session + lifetime for on-demand sticky IP rotation.
-   */
-  function buildRotatingPassword(basePassword, { country, session, lifetime } = {}) {
+  /** Strip _session / _lifetime; append fresh session + lifetime on rotate. */
+  function buildRotatingPassword(basePassword, { session, lifetime } = {}) {
     let base = String(basePassword || '')
       .replace(/_session-[^_]+/gi, '')
       .replace(/_lifetime-[^_]+/gi, '')
       .trim();
-
-    if (country && !/_country-/i.test(base)) {
-      base += `_country-${country}`;
-    }
     if (session) base += `_session-${session}`;
     if (lifetime != null && lifetime !== '') base += `_lifetime-${lifetime}`;
     return base;
+  }
+
+  async function readProxyCitySetting() {
+    try {
+      const r = await chrome.storage.local.get(['fanikaSettings']);
+      return r.fanikaSettings?.proxyCity || 'tetouan';
+    } catch (_) {
+      return 'tetouan';
+    }
   }
 
   class ProxyRotation {
     constructor() {
       this.env = null;
       this.sessionId = null;
+      this.passwordBase = null;
+      this.proxyCity = 'tetouan';
       this.enabled = false;
       this._authListener = null;
     }
@@ -50,15 +58,14 @@
       const host = this.env.PROXY_HOST;
       const port = Number(this.env.PROXY_PORT);
       const username = this.env.PROXY_USERNAME;
-      const password = this.env.PROXY_PASSWORD;
 
-      if (!host || !port || !username || !password) {
-        throw new Error('Missing PROXY_HOST / PROXY_PORT / PROXY_USERNAME / PROXY_PASSWORD in .env');
+      if (!host || !port || !username) {
+        throw new Error('Missing PROXY_HOST / PROXY_PORT / PROXY_USERNAME in .env');
       }
 
-      if (!this.sessionId) {
-        this.sessionId = randomSessionId();
-      }
+      await this._resolvePasswordBase();
+
+      if (!this.sessionId) this.sessionId = randomSessionId();
       return this.getConfig();
     }
 
@@ -67,17 +74,26 @@
       return raw || '30m';
     }
 
-    get country() {
-      return (this.env?.PROXY_COUNTRY || '').trim();
+    async _resolvePasswordBase() {
+      const city = await readProxyCitySetting();
+      this.proxyCity = city;
+      const envKey = CITY_ENV_KEYS[city] || CITY_ENV_KEYS.tetouan;
+      const base = this.env?.[envKey] || this.env?.PROXY_PASSWORD;
+      if (!base) {
+        throw new Error(`Missing ${envKey} (or PROXY_PASSWORD) in .env for proxy city "${city}"`);
+      }
+      this.passwordBase = base;
+      if (typeof debugLog === 'function') {
+        debugLog('proxy.city', { proxyCity: city, envKey });
+      }
+      return base;
     }
 
-    /** Current proxy auth: username + password with session params */
     getCredentials() {
-      if (!this.env) throw new Error('ProxyRotation not initialized');
+      if (!this.env || !this.passwordBase) throw new Error('ProxyRotation not initialized');
       return {
         username: this.env.PROXY_USERNAME,
-        password: buildRotatingPassword(this.env.PROXY_PASSWORD, {
-          country: this.country,
+        password: buildRotatingPassword(this.passwordBase, {
           session: this.sessionId,
           lifetime: this.lifetime
         })
@@ -93,7 +109,7 @@
         password: creds.password,
         sessionId: this.sessionId,
         lifetime: this.lifetime,
-        country: this.country || null
+        proxyCity: this.proxyCity
       };
     }
 
@@ -109,7 +125,8 @@
         if (typeof debugLog === 'function') {
           debugLog('proxy.auth.407', {
             host: details.challenger?.host,
-            session: this.sessionId
+            session: this.sessionId,
+            proxyCity: this.proxyCity
           });
         }
         callback({ authCredentials: { username, password } });
@@ -124,6 +141,7 @@
 
     async enable() {
       if (!this.env) await this.init();
+      else await this._resolvePasswordBase();
       this._ensureAuthListener();
       this.enabled = true;
 
@@ -132,46 +150,37 @@
         value: {
           mode: 'fixed_servers',
           rules: {
-            singleProxy: {
-              scheme: 'http',
-              host,
-              port
-            },
+            singleProxy: { scheme: 'http', host, port },
             bypassList: ['localhost', '127.0.0.1', '::1']
           }
         },
         scope: 'regular'
       });
       if (typeof debugLog === 'function') {
-        debugLog('proxy.enable', { host, port, session: this.sessionId });
+        debugLog('proxy.enable', { host, port, session: this.sessionId, proxyCity: this.proxyCity });
       }
-      console.log('[fanika/proxy] Enabled', host + ':' + port, 'session=', this.sessionId);
+      console.log('[fanika/proxy] Enabled', host + ':' + port, 'city=', this.proxyCity, 'session=', this.sessionId);
       return this.getConfig();
     }
 
     async disable() {
       await chrome.proxy.settings.clear({ scope: 'regular' });
       this.enabled = false;
-      if (typeof debugLog === 'function') {
-        debugLog('proxy.disable', {});
-      }
+      if (typeof debugLog === 'function') debugLog('proxy.disable', {});
       console.log('[fanika/proxy] Disabled');
       return { success: true };
     }
 
-    /**
-     * On-demand IP rotate: new sticky session id (no TTL wait).
-     * Re-applies chrome.proxy so new connections use the new session.
-     */
     async rotate() {
       if (!this.env) await this.init();
       this.sessionId = randomSessionId();
+      await this._resolvePasswordBase();
       this._ensureAuthListener();
       this.enabled = true;
       if (typeof debugLog === 'function') {
-        debugLog('proxy.rotate.session', { sessionId: this.sessionId });
+        debugLog('proxy.rotate.session', { sessionId: this.sessionId, proxyCity: this.proxyCity });
       }
-      console.log('[fanika/proxy] Rotating session →', this.sessionId);
+      console.log('[fanika/proxy] Rotating session →', this.sessionId, 'city=', this.proxyCity);
       await chrome.proxy.settings.clear({ scope: 'regular' });
       await sleep(250);
       return this.getConfig();

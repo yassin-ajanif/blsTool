@@ -6,6 +6,25 @@ const DEBUG_KEY = 'fanikaDebugLog';
 
 let selectedId = null;
 
+function setSelectStatus(text, isError) {
+  const el = document.getElementById('select-status');
+  if (!el) return;
+  el.textContent = text || '';
+  el.style.color = isError ? '#c62828' : '#1565c0';
+}
+
+function clientLabel(c) {
+  if (!c) return '—';
+  const parts = [c.name, c.location, c.visaType].filter(Boolean);
+  return parts.join(' · ');
+}
+
+function updateSelectedBanner(clients) {
+  const client = clients.find((c) => c.id === selectedId) || null;
+  const label = document.getElementById('selected-label');
+  if (label) label.textContent = client ? clientLabel(client) : '(none — click a row)';
+}
+
 // --- Tabs ---
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -77,42 +96,77 @@ function fillVisaSubtypes() {
 document.getElementById('client-location').addEventListener('change', fillVisaTypes);
 document.getElementById('client-visa-type').addEventListener('change', fillVisaSubtypes);
 
+async function selectClientById(id, clients) {
+  const client = clients.find((c) => c.id === id);
+  if (!client) throw new Error('Client not found');
+  await mgr.selectClient(id);
+  selectedId = id;
+  updateSelectedBanner(clients);
+  setSelectStatus('Selected: ' + clientLabel(client));
+  document.querySelectorAll('.client-item').forEach((row) => {
+    row.classList.toggle('selected', row.dataset.clientId === id);
+  });
+  return client;
+}
+
 // --- Clients list ---
 async function renderClients() {
   const clients = await mgr.loadClients();
-  selectedId = (await mgr.getSelectedId()) || clients[0]?.id || null;
+  const storedId = await mgr.getSelectedId();
+  selectedId = storedId && clients.some((c) => c.id === storedId)
+    ? storedId
+    : clients[0]?.id || null;
+
+  if (selectedId && selectedId !== storedId) {
+    await mgr.selectClient(selectedId);
+  }
+
   const ul = document.getElementById('clients-list');
   ul.innerHTML = '';
+  updateSelectedBanner(clients);
+
   if (!clients.length) {
     ul.innerHTML = '<li class="hint">No clients yet — click Add client.</li>';
     return;
   }
+
   clients.forEach((c) => {
     const li = document.createElement('li');
     li.className = 'client-item' + (c.id === selectedId ? ' selected' : '');
+    li.dataset.clientId = c.id;
     li.innerHTML = `
+      <span class="pick" aria-hidden="true"></span>
       <div class="meta">
         <div class="name">${escapeHtml(c.name)}</div>
         <div>${escapeHtml(c.email)} · ${escapeHtml(c.location || '?')} · ${escapeHtml(c.visaType || '?')}</div>
       </div>
-      <button type="button" class="btn edit-btn">Edit</button>
-      <button type="button" class="btn btn-danger del-btn">Delete</button>`;
-    li.addEventListener('click', async (e) => {
-      if (e.target.classList.contains('edit-btn')) {
-        openForm(c);
-        return;
-      }
-      if (e.target.classList.contains('del-btn')) {
-        if (confirm('Delete ' + c.name + '?')) {
-          await mgr.deleteClient(c.id);
-          renderClients();
-        }
-        return;
-      }
-      await mgr.selectClient(c.id);
-      selectedId = c.id;
-      renderClients();
+      <div class="actions">
+        <button type="button" class="btn edit-btn">Edit</button>
+        <button type="button" class="btn btn-danger del-btn">Delete</button>
+      </div>`;
+
+    li.querySelector('.edit-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openForm(c);
     });
+
+    li.querySelector('.del-btn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (confirm('Delete ' + c.name + '?')) {
+        await mgr.deleteClient(c.id);
+        setSelectStatus('');
+        renderClients();
+      }
+    });
+
+    li.addEventListener('click', async () => {
+      try {
+        await selectClientById(c.id, clients);
+      } catch (err) {
+        setSelectStatus(err.message, true);
+      }
+    });
+
     ul.appendChild(li);
   });
 }
@@ -164,10 +218,9 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     country: 'Spain'
   };
   await mgr.addOrUpdateClient(payload);
-  if (!id) {
-    const clients = await mgr.loadClients();
-    await mgr.selectClient(clients[clients.length - 1].id);
-  }
+  const clients = await mgr.loadClients();
+  const saved = id ? clients.find((c) => c.id === id) : clients[clients.length - 1];
+  if (saved) await selectClientById(saved.id, clients);
   document.getElementById('form-status').textContent = 'Saved.';
   document.getElementById('client-form-wrap').classList.add('hidden');
   renderClients();
@@ -180,11 +233,26 @@ document.getElementById('launch-btn').addEventListener('click', async () => {
     document.getElementById('client-form').requestSubmit();
     await new Promise((r) => setTimeout(r, 200));
   }
-  const client = await mgr.getSelectedClient();
-  if (!client) {
-    alert('Save a client first (click Save), then Launch.');
+
+  const clients = await mgr.loadClients();
+  if (!clients.length) {
+    alert('Save a client first, then Launch.');
     return;
   }
+
+  if (selectedId) {
+    try {
+      await mgr.selectClient(selectedId);
+    } catch (_) {}
+  }
+
+  const client = await mgr.getSelectedClient();
+  if (!client) {
+    alert('Select a client (click a row), then Launch.');
+    return;
+  }
+
+  setSelectStatus('Launching ' + clientLabel(client) + '…');
   mgr.launchLogin(client);
 });
 
@@ -198,6 +266,7 @@ async function loadSettingsUI() {
   document.getElementById('submit-visatype').checked = !!s.submitPages?.visaTypePage;
   document.getElementById('submit-visatype-ms').value = s.submitPages?.visaTypePageMs ?? 0;
   document.getElementById('redirect-ms').value = s.redirects?.pageRedirectMs ?? 0;
+  document.getElementById('proxy-city').value = s.proxyCity || 'tetouan';
 }
 
 document.getElementById('save-settings-btn').addEventListener('click', async () => {
@@ -210,7 +279,8 @@ document.getElementById('save-settings-btn').addEventListener('click', async () 
       visaTypePage: document.getElementById('submit-visatype').checked,
       visaTypePageMs: Number(document.getElementById('submit-visatype-ms').value) || 0
     },
-    redirects: { pageRedirectMs: Number(document.getElementById('redirect-ms').value) || 500 }
+    redirects: { pageRedirectMs: Number(document.getElementById('redirect-ms').value) || 500 },
+    proxyCity: document.getElementById('proxy-city').value || 'tetouan'
   };
   await mgr.saveSettings(settings);
   document.getElementById('settings-status').textContent = 'Settings saved.';

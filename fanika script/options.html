@@ -70,15 +70,46 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
       margin-bottom: 8px;
       background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
     }
-    .client-item.selected { border-color: #2e7d32; background: #e8f5e9; }
-    .client-item .meta { flex: 1; font-size: 13px; }
+    .client-item:hover { border-color: #81c784; background: #f1f8e9; }
+    .client-item.selected {
+      border-color: #2e7d32;
+      background: #e8f5e9;
+      box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.25);
+    }
+    .client-item .pick {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #bbb;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .client-item.selected .pick {
+      border-color: #2e7d32;
+      background: #2e7d32;
+      box-shadow: inset 0 0 0 3px #e8f5e9;
+    }
+    .client-item .meta { flex: 1; font-size: 13px; min-width: 0; }
     .client-item .name { font-weight: 600; }
+    .client-item .actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .client-item .actions .btn { margin: 0; width: auto; }
+    #selected-banner {
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      font-size: 13px;
+    }
+    #selected-banner strong { color: #1b5e20; }
     .hint { color: #666; font-size: 12px; margin-top: 8px; }
     #debug-log {
       width: 100%;
@@ -118,8 +149,10 @@
         <div class="row" style="margin-bottom:12px">
           <button type="button" class="btn btn-primary" id="add-client-btn">Add client</button>
         </div>
+        <div id="selected-banner">Selected: <strong id="selected-label">—</strong></div>
         <ul id="clients-list" class="client-list"></ul>
-        <p class="hint">Select a client (click row), then Launch or use the popup.</p>
+        <p class="hint">Click a row to select (green border + dot). Then Launch or use the popup.</p>
+        <p id="select-status" class="status"></p>
       </div>
 
       <div id="client-form-wrap" class="card hidden">
@@ -182,6 +215,19 @@
             <span>ms</span>
           </div>
         </div>
+      </div>
+      <div class="card">
+        <h3>Proxy city (IPRoyal)</h3>
+        <div class="field">
+          <label for="proxy-city">Exit city — password suffix from <code>.env</code></label>
+          <select id="proxy-city">
+            <option value="random">Random (Morocco, no city pin)</option>
+            <option value="tetouan">Tetouan</option>
+            <option value="tangier">Tangier</option>
+            <option value="casablanca">Casablanca</option>
+          </select>
+        </div>
+        <p class="hint">Used on IP rotate / Too Many. Session id is added automatically — do not put <code>_session-</code> in .env.</p>
       </div>
       <div class="card">
         <div class="field"><label>Redirect delay (home → new appointment) ms</label>

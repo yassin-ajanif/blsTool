@@ -18,12 +18,17 @@ function send(action, extra) {
 
 async function refresh() {
   const ip = await send('getPublicIp');
-  if (ip?.ip) document.getElementById('ip').textContent = ip.ip;
+  if (ip?.ip) {
+    document.getElementById('ip').textContent = ip.city ? ip.ip + ' · ' + ip.city : ip.ip;
+  }
 
   const stored = await chrome.storage.local.get(['fanikaClients', 'fanikaSelectedClientId']);
   const clients = stored.fanikaClients || [];
   const sel = clients.find((c) => c.id === stored.fanikaSelectedClientId) || clients[0];
-  document.getElementById('client').textContent = sel ? sel.name : '(no client — open Options)';
+  const label = sel
+    ? [sel.name, sel.location, sel.visaType].filter(Boolean).join(' · ')
+    : '(no client — open Options)';
+  document.getElementById('client').textContent = label;
 }
 
 document.getElementById('login').addEventListener('click', async () => {

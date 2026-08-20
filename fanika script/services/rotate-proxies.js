@@ -202,7 +202,7 @@
         username: config.username,
         sessionId: config.sessionId,
         lifetime: config.lifetime,
-        country: config.country
+        proxyCity: config.proxyCity
       };
     }
   }
