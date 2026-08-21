@@ -1,5 +1,6 @@
 /**
- * Early bounce: if kicked to home/error (etc.) while slot-hold is active, snap back ASAP.
+ * Early bounce: kick-out / NewAppointment?msg= while fight active
+ * → clean NewAppointment only (keep cookies, no rotate).
  */
 (function () {
   const lower = (location.href || '').toLowerCase();
@@ -7,16 +8,21 @@
   if (lower.includes('/appointment/slotselection')) return;
   if (lower.includes('/appointment/applicantselection')) return;
   if (lower.includes('/account/login')) return;
+  if (lower.includes('/appointment/visatype')) return;
+  if (
+    lower.includes('/appointment/newappointment') &&
+    !(lower.includes('msg=') || lower.includes('?msg'))
+  ) {
+    return;
+  }
 
   const looksKickout =
     lower.includes('/home/error') ||
     lower.includes('/home/index') ||
     lower.includes('/appointment/pendingappointment') ||
-    lower.includes('/appointment/newappointment') ||
+    (lower.includes('/appointment/newappointment') &&
+      (lower.includes('msg=') || lower.includes('?msg'))) ||
     lower.includes('/appointment/appointmentcaptcha');
-
-  // VisaType is a recovery target — never bounce away from it here.
-  if (lower.includes('/appointment/visatype')) return;
 
   if (!looksKickout) return;
 

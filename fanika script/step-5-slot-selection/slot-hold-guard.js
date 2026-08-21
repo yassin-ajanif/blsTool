@@ -1,12 +1,14 @@
 /**
  * Background: remember SlotSelection + VisaType URLs.
- * Empty calendar → stay/reload slots.
- * Too Many → go back to saved VisaType and restart fill/submit.
+ * Fight kick-out / slots unavailable → clean NewAppointment (keep cookies, no rotate).
  * MV3 cannot clear Location headers — we snap the tab instead.
  */
 (function (global) {
   const HOLD_STORE = 'fanikaSlotHoldByTab';
   const RELOAD_HINT_MS = 5000;
+  const DEFAULT_NEW_APPOINTMENT =
+    'https://www.blsspainmorocco.net/MAR/appointment/newappointment';
+  const recoverInFlight = new Set();
 
   function isBls(url) {
     try {
@@ -25,6 +27,28 @@
     return /\/appointment\/visatype/i.test(url || '');
   }
 
+  function isNewAppointmentUrl(url) {
+    return /\/appointment\/newappointment/i.test(url || '');
+  }
+
+  /** Clean NewAppointment (no msg=) — recovery landing; do not bounce away. */
+  function isCleanNewAppointmentUrl(url) {
+    const lower = (url || '').toLowerCase();
+    if (!isNewAppointmentUrl(lower)) return false;
+    return !(lower.includes('msg=') || lower.includes('?msg'));
+  }
+
+  function newAppointmentUrl(fromUrl) {
+    if (typeof fanikaRedirect !== 'undefined' && fanikaRedirect.newAppointmentUrl) {
+      return fanikaRedirect.newAppointmentUrl(fromUrl || DEFAULT_NEW_APPOINTMENT);
+    }
+    try {
+      return new URL('/MAR/appointment/newappointment', new URL(fromUrl).origin).href;
+    } catch (_) {
+      return DEFAULT_NEW_APPOINTMENT;
+    }
+  }
+
   function isAllowedLeaveUrl(url) {
     const lower = (url || '').toLowerCase();
     if (!lower) return false;
@@ -35,30 +59,36 @@
     return false;
   }
 
-  /** Kick-outs we bounce away from while hold is active. VisaType is allowed (recovery). */
+  /** Kick-outs while fight active. Clean NewAppointment is recovery target, not kick-out. */
   function isKickoutUrl(url) {
     const lower = (url || '').toLowerCase();
     if (!lower || !isBls(lower)) return false;
     if (isSlotSelectionUrl(lower)) return false;
     if (isVisaTypeUrl(lower)) return false;
+    if (isCleanNewAppointmentUrl(lower)) return false;
     if (isAllowedLeaveUrl(lower)) return false;
 
     if (lower.includes('/home/error')) return true;
     if (lower.includes('/home/index')) return true;
     if (lower.includes('/appointment/pendingappointment')) return true;
     if (lower.includes('/appointment/appointmentcaptcha')) return true;
-    if (lower.includes('/appointment/newappointment')) return true;
+    // NewAppointment?msg=… (no-slots / errors)
+    if (isNewAppointmentUrl(lower)) return true;
     return false;
   }
 
   function looksLikeTooManyKickout(url) {
     const lower = (url || '').toLowerCase();
     if (!lower) return false;
-    if (lower.includes('/appointment/newappointment') && (lower.includes('msg=') || lower.includes('?msg'))) {
+    if (isNewAppointmentUrl(lower) && (lower.includes('msg=') || lower.includes('?msg'))) {
       return true;
     }
     if (lower.includes('/home/error')) return true;
     return false;
+  }
+
+  function canRecover(hold) {
+    return Boolean(hold && (hold.active || hold.visaTypeUrl) && (hold.visaTypeUrl || hold.url));
   }
 
   async function getHoldMap() {
@@ -79,11 +109,12 @@
     map[String(tabId)] = {
       ...prev,
       visaTypeUrl: url,
+      active: true,
       updatedAt: Date.now()
     };
     await setHoldMap(map);
     if (typeof debugLog === 'function') {
-      await debugLog('slotHold.rememberVisa', { tabId, url });
+      await debugLog('slotHold.rememberVisa', { tabId, url, active: true });
     }
   }
 
@@ -143,47 +174,68 @@
 
   async function bounceToSlots(tabId, fromUrl) {
     const hold = await getHold(tabId);
-    if (!hold?.active || !hold.url) return false;
+    if (!canRecover(hold) || !hold.url) return false;
     if (typeof debugLog === 'function') {
       await debugLog('slotHold.bounce', { tabId, fromUrl, backTo: hold.url });
     }
     return navigateHold(tabId, hold.url, 'Kick-out blocked — back to slots (reload in 5s)');
   }
 
-  /** Too Many: restart from VisaType (fresh submit → new SlotSelection attempt). */
-  async function bounceToVisaType(tabId, fromUrl) {
+  /**
+   * Redirect to clean NewAppointment only (keep cookies, no IP rotate).
+   * Allowed when fight hold is active OR fromUrl is a msg=/kick-out page.
+   */
+  async function recoverToNewAppointment(tabId, fromUrl) {
     const hold = await getHold(tabId);
-    if (!hold?.active) return false;
-    const target = hold.visaTypeUrl || hold.url;
-    if (!target) return false;
+    const forceMsgKick =
+      looksLikeTooManyKickout(fromUrl) ||
+      (isKickoutUrl(fromUrl) && isNewAppointmentUrl(fromUrl));
+    if (!canRecover(hold) && !forceMsgKick) return { ok: false, reason: 'noHold' };
+    if (recoverInFlight.has(tabId)) return { ok: false, reason: 'inFlight' };
+    recoverInFlight.add(tabId);
 
-    if (typeof debugLog === 'function') {
-      await debugLog('slotHold.bounceVisa', {
-        tabId,
-        fromUrl,
-        backTo: target,
-        usedVisa: Boolean(hold.visaTypeUrl)
-      });
+    try {
+      const target = newAppointmentUrl(
+        fromUrl || hold?.visaTypeUrl || hold?.url || DEFAULT_NEW_APPOINTMENT
+      );
+
+      if (typeof debugLog === 'function') {
+        await debugLog('slotHold.recoverNA', {
+          tabId,
+          fromUrl,
+          backTo: target,
+          wipe: false,
+          rotate: false,
+          forceMsgKick
+        });
+      }
+
+      await clearSlotHold(tabId);
+      const navOk = await navigateHold(tabId, target, 'Slots unavailable — New Appointment');
+      return { ok: navOk, target };
+    } finally {
+      recoverInFlight.delete(tabId);
     }
+  }
 
-    return navigateHold(
-      tabId,
-      target,
-      hold.visaTypeUrl
-        ? 'Too Many — back to Visa Type (restart)'
-        : 'Too Many — no Visa URL saved, back to slots'
-    );
+  /** @deprecated name kept for callers — now redirect → NewAppointment */
+  async function bounceToVisaType(tabId, fromUrl) {
+    const res = await recoverToNewAppointment(tabId, fromUrl);
+    return Boolean(res?.ok);
   }
 
   async function recoverFromTooMany(tabId, fromUrl) {
-    const hold = await getHold(tabId);
-    if (!hold?.active) return false;
-    if (hold.visaTypeUrl) return bounceToVisaType(tabId, fromUrl);
-    return bounceToSlots(tabId, fromUrl);
+    const res = await recoverToNewAppointment(tabId, fromUrl);
+    return Boolean(res?.ok);
   }
 
   async function onTabUrl(tabId, url) {
     if (!url || !isBls(url)) return;
+
+    if (isCleanNewAppointmentUrl(url)) {
+      // Recovery landing — leave hold cleared / do not re-bounce
+      return;
+    }
 
     if (isVisaTypeUrl(url)) {
       await rememberVisaType(tabId, url);
@@ -201,14 +253,10 @@
     }
 
     const hold = await getHold(tabId);
-    if (!hold?.active) return;
+    if (!canRecover(hold)) return;
 
     if (isKickoutUrl(url)) {
-      if (looksLikeTooManyKickout(url)) {
-        await recoverFromTooMany(tabId, url);
-      } else {
-        await bounceToSlots(tabId, url);
-      }
+      await recoverToNewAppointment(tabId, url);
     }
   }
 
@@ -235,12 +283,17 @@
     rememberVisaType,
     clearSlotHold,
     getHold,
+    canRecover,
     bounceToSlots,
     bounceToVisaType,
     recoverFromTooMany,
+    recoverToNewAppointment,
+    newAppointmentUrl,
     installSlotHoldGuard,
     isSlotSelectionUrl,
     isVisaTypeUrl,
+    isNewAppointmentUrl,
+    isCleanNewAppointmentUrl,
     isKickoutUrl,
     looksLikeTooManyKickout
   };

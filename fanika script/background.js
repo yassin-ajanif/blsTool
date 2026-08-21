@@ -1,6 +1,7 @@
 /**
  * Fanika background
- * Too Many: wipe up to 3 times → still 429 → wipe + rotate Chrome proxy → login.
+ * Fight / slots unavailable: redirect → clean NewAppointment (keep cookies, no rotate).
+ * Cold Too Many (no fight): wipe×3 → rotate → login.
  */
 importScripts(
   'load-env.js',
@@ -198,31 +199,29 @@ async function openLogin() {
 async function handleTooMany(tabId, pageUrl) {
   const url = pageUrl || '';
 
-  // Slot-hold fight owns Too Many: restart VisaType (or slots fallback), never wipe → login.
+  // msg= / fight: never wipe→login — only NewAppointment (content script should
+  // avoid calling this; belt-and-suspenders if it still does).
   const hold = tabId != null ? await fanikaSlotHold.getHold(tabId) : null;
-  if (hold?.active && (hold.visaTypeUrl || hold.url)) {
-    await debugLog('tooMany.skip.slotHold', {
-      tabId,
-      url,
-      backTo: hold.visaTypeUrl || hold.url,
-      via: hold.visaTypeUrl ? 'visaType' : 'slots'
-    });
-    const bounced = await fanikaSlotHold.recoverFromTooMany(tabId, url);
+  const hasMsg = /[?&]msg=/i.test(url);
+  if (hasMsg || fanikaSlotHold.canRecover(hold)) {
+    await notifyOverlay(tabId, 'Fight / msg= — New Appointment only…', 'error');
+    const res = await fanikaSlotHold.recoverToNewAppointment(tabId, url);
     await notifyOverlay(
       tabId,
-      bounced
-        ? hold.visaTypeUrl
-          ? 'Too Many — back to Visa Type (restart)'
-          : 'Too Many — back to slots'
-        : 'Slot hold active',
-      'error'
+      res?.ok
+        ? 'Redirected to New Appointment'
+        : res?.reason === 'inFlight'
+          ? 'New Appointment recovery already in progress'
+          : 'New Appointment redirect failed',
+      res?.ok || res?.reason === 'inFlight' ? 'ok' : 'error'
     );
     return {
-      success: true,
-      action: bounced ? 'bouncedToVisaOrSlots' : 'slotHoldActive',
-      holdUrl: hold.url,
-      visaTypeUrl: hold.visaTypeUrl || null,
-      redirected: bounced ? hold.visaTypeUrl || hold.url : null
+      success: Boolean(res?.ok || res?.reason === 'inFlight'),
+      action: 'redirectNewAppointment',
+      redirected: res?.target || null,
+      reason: res?.reason || null,
+      holdUrl: hold?.url || null,
+      visaTypeUrl: hold?.visaTypeUrl || null
     };
   }
 
@@ -359,8 +358,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (action === 'slotHoldRecoverVisa') {
     const tabId = sender?.tab?.id;
     fanikaSlotHold
-      .recoverFromTooMany(tabId, message.url || sender?.tab?.url)
-      .then((ok) => sendResponse({ success: true, bounced: ok }))
+      .recoverToNewAppointment(tabId, message.url || sender?.tab?.url)
+      .then((res) => {
+        const ok = Boolean(res?.ok || res?.reason === 'inFlight');
+        sendResponse({
+          success: ok,
+          bounced: ok,
+          action: 'redirectNewAppointment',
+          ...res
+        });
+      })
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
@@ -377,49 +384,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (action === 'slotHoldBounceIfNeeded') {
     const tabId = sender?.tab?.id;
     (async () => {
-      const hold = await fanikaSlotHold.getHold(tabId);
-      if (!hold?.active || !(hold.visaTypeUrl || hold.url)) {
-        sendResponse({ success: true, bounced: false, holdActive: false });
-        return;
-      }
       const from = message.url || sender?.tab?.url || '';
-      if (fanikaSlotHold.isSlotSelectionUrl(from) || fanikaSlotHold.isVisaTypeUrl(from)) {
+      const hold = await fanikaSlotHold.getHold(tabId);
+      const hasMsg = /[?&]msg=/i.test(from);
+
+      // msg= kick-out always recovers to clean NewAppointment (even if hold cleared)
+      if (hasMsg || fanikaSlotHold.isKickoutUrl(from)) {
+        if (!fanikaSlotHold.canRecover(hold) && !hasMsg) {
+          sendResponse({ success: true, bounced: false, holdActive: false });
+          return;
+        }
+        if (
+          fanikaSlotHold.isSlotSelectionUrl(from) ||
+          fanikaSlotHold.isVisaTypeUrl(from) ||
+          fanikaSlotHold.isCleanNewAppointmentUrl(from)
+        ) {
+          sendResponse({
+            success: true,
+            bounced: false,
+            holdActive: Boolean(hold && fanikaSlotHold.canRecover(hold)),
+            url: fanikaSlotHold.newAppointmentUrl(from)
+          });
+          return;
+        }
+
+        await debugLog('slotHold.earlyBounce', {
+          tabId,
+          from,
+          via: 'newAppointment',
+          wipeRotate: false,
+          hasMsg
+        });
+
+        const res = await fanikaSlotHold.recoverToNewAppointment(tabId, from);
         sendResponse({
-          success: true,
-          bounced: false,
-          holdActive: true,
-          url: hold.visaTypeUrl || hold.url
+          success: Boolean(res?.ok || res?.reason === 'inFlight'),
+          bounced: Boolean(res?.ok || res?.reason === 'inFlight'),
+          holdActive: false,
+          url: res?.target || fanikaSlotHold.newAppointmentUrl(from),
+          action: 'redirectNewAppointment',
+          reason: res?.reason || null
         });
         return;
       }
-      const tooManyKick = fanikaSlotHold.looksLikeTooManyKickout(from);
-      const shouldBounce =
-        fanikaSlotHold.isKickoutUrl(from) || !fanikaSlotHold.isSlotSelectionUrl(from);
-      if (!shouldBounce) {
-        sendResponse({ success: true, bounced: false, holdActive: true });
+
+      if (!fanikaSlotHold.canRecover(hold)) {
+        sendResponse({ success: true, bounced: false, holdActive: false });
         return;
       }
-      const target = tooManyKick
-        ? hold.visaTypeUrl || hold.url
-        : hold.url || hold.visaTypeUrl;
-      await debugLog('slotHold.earlyBounce', {
-        tabId,
-        from,
-        backTo: target,
-        tooManyKick,
-        via: tooManyKick && hold.visaTypeUrl ? 'visaType' : 'slots'
-      });
       sendResponse({
         success: true,
-        bounced: true,
+        bounced: false,
         holdActive: true,
-        url: target
+        url: hold.visaTypeUrl || hold.url || fanikaSlotHold.newAppointmentUrl(from)
       });
-      if (tooManyKick) {
-        await fanikaSlotHold.recoverFromTooMany(tabId, from);
-      } else {
-        await fanikaSlotHold.bounceToSlots(tabId, from);
-      }
     })().catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
@@ -573,7 +591,7 @@ const redirectCooldown = new Map();
 async function maybeInterceptNewAppointment(tabId, url) {
   if (!url || !fanikaRedirect?.shouldRedirectToNewAppointment(url)) return;
   const hold = await fanikaSlotHold.getHold(tabId);
-  if (hold?.active) {
+  if (fanikaSlotHold.canRecover(hold)) {
     await debugLog('redirect.skip.slotHold', { tabId, url });
     return;
   }
@@ -604,7 +622,7 @@ rotateProxies.start()
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — slot hold: block kick-out + 5s reload; Too Many login: wipe×3 then proxy rotate');
+console.log('[fanika] Ready — msg=/fight → NewAppointment only; cold Too Many → wipe×3→login');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.11",
-  "description": "Fanika — Too Many recovers to Visa Type; empty slots reload 5s",
+  "version": "0.2.17",
+  "description": "Fanika — msg=/fight Too Many: NewAppointment only (never wipe→login)",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",
