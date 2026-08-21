@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.17",
-  "description": "Fanika — msg=/fight Too Many: NewAppointment only (never wipe→login)",
+  "version": "0.2.18",
+  "description": "Fanika — fight Too Many: clear visitorId_current + reload same page",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",

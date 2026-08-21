@@ -1,7 +1,7 @@
 /**
  * Step 5 — Slot hold on /slotselection.
- * Too Many / empty / no calendar → immediately New Appointment (keep cookies).
- * No 5s reload loop.
+ * Too Many / empty / no calendar → erase visitorId_current + reload same page.
+ * No redirect to NewAppointment.
  */
 (function () {
   if (window.__fanikaSlotHoldInstalled) return;
@@ -36,7 +36,6 @@
   function isSlotsUnavailable() {
     if (!isSlotSelection()) return false;
     if (isRestrictedBanner()) return true;
-    // Empty shell = no real calendar
     return !(document.querySelector('header') || document.querySelector('footer'));
   }
 
@@ -79,20 +78,27 @@
     });
   }
 
-  function goNewAppointment(reason) {
+  function recoverVisitorReload(reason) {
     if (recovering) return;
     recovering = true;
     rememberHold();
-    setOverlay('Slots unavailable — New Appointment…', 'restricted');
+    setOverlay('Slots unavailable — clear visitorId_current, reload…', 'restricted');
     chrome.runtime.sendMessage({
       action: 'debugLog',
       event: 'slotHold.slotsUnavailable',
-      data: { url: location.href, reason }
+      data: { url: location.href, reason, protocol: 'visitorWipe+reload' }
     });
-    chrome.runtime.sendMessage({
-      action: 'slotHoldRecoverVisa',
-      url: location.href
-    });
+    chrome.runtime.sendMessage(
+      {
+        action: 'slotHoldRecoverVisa',
+        url: location.href
+      },
+      (res) => {
+        if (chrome.runtime.lastError || !(res?.ok || res?.success || res?.bounced)) {
+          recovering = false;
+        }
+      }
+    );
   }
 
   function evaluate() {
@@ -113,7 +119,7 @@
 
     if (isSlotsUnavailable()) {
       const reason = isRestrictedBanner() ? 'restrictedOrNoSlotsText' : 'emptyPage';
-      goNewAppointment(reason);
+      recoverVisitorReload(reason);
     }
   }
 

@@ -1,6 +1,6 @@
 /**
  * Early bounce: kick-out / NewAppointment?msg= while fight active
- * → clean NewAppointment only (keep cookies, no rotate).
+ * → erase visitorId_current + reload same page (no NewAppointment redirect).
  */
 (function () {
   const lower = (location.href || '').toLowerCase();

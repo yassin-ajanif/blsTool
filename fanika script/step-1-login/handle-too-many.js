@@ -1,7 +1,7 @@
 /**
  * Step 1 — Too Many handler
- * If URL has msg= OR fight hold active → only recoverToNewAppointment (never wipe→login).
- * Else (cold login/etc.): wipe×3 → rotate → login via handleTooMany.
+ * On NewAppointment / VisaType / slots (or msg= / fight): erase visitorId_current + reload same page.
+ * Never redirect to NewAppointment. Else (cold login/etc.): wipe×3 → rotate → login.
  */
 (function () {
   if (window.__fanikaStep1TooManyInstalled) return;
@@ -18,6 +18,19 @@
   function hasMsgParam() {
     const href = location.href || '';
     return /[?&]msg=/i.test(href);
+  }
+
+  function pathLower() {
+    return (location.pathname || '').toLowerCase();
+  }
+
+  function isFightFlowPage() {
+    const p = pathLower();
+    return (
+      p.includes('/appointment/newappointment') ||
+      p.includes('/appointment/visatype') ||
+      p.includes('/appointment/slotselection')
+    );
   }
 
   function setLocalOverlay(text, phase) {
@@ -45,16 +58,11 @@
     }
   }
 
-  function isSlotSelectionPath() {
-    if (window.fanikaPage?.isSlotSelection?.()) return true;
-    return (location.pathname || '').toLowerCase().includes('/appointment/slotselection');
-  }
-
-  function recoverNewAppointmentOnly(reason) {
-    setLocalOverlay('Slots/kick-out — New Appointment…', 'restricted');
+  function recoverVisitorReload(reason) {
+    setLocalOverlay('Too Many — clearing visitorId_current, reload…', 'restricted');
     chrome.runtime.sendMessage({
       action: 'debugLog',
-      event: 'page.tooMany.recoverNAOnly',
+      event: 'page.tooMany.recoverVisitorReload',
       data: {
         url: location.href,
         reason,
@@ -68,15 +76,18 @@
         checking = false;
         if (chrome.runtime.lastError) {
           console.error('[fanika/step-1-login]', chrome.runtime.lastError.message);
-          setLocalOverlay('New Appointment redirect error', 'error');
+          setLocalOverlay('visitorId_current reload error', 'error');
           handled = false;
           return;
         }
-        console.log('[fanika/step-1-login] recoverNA only:', response);
+        console.log('[fanika/step-1-login] recoverVisitorReload:', response);
         if (response?.bounced || response?.success || response?.ok) {
-          setLocalOverlay('Redirected to New Appointment', 'ok');
+          setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
+        } else if (response?.reason === 'cooldown' || response?.reason === 'inFlight') {
+          setLocalOverlay('Reload cooldown — waiting…', 'wipe');
+          handled = false;
         } else {
-          setLocalOverlay('New Appointment redirect failed', 'error');
+          setLocalOverlay('visitorId_current reload failed', 'error');
           handled = false;
         }
       }
@@ -85,7 +96,6 @@
 
   function requestHandleTooMany() {
     if (handled || checking) return;
-    if (isSlotSelectionPath()) return;
 
     checking = true;
     handled = true;
@@ -97,13 +107,12 @@
       data: { url: location.href, h1: document.querySelector('h1')?.textContent?.trim() }
     });
 
-    // msg= kick-out → only NewAppointment recovery (never handleTooMany)
-    if (hasMsgParam()) {
-      recoverNewAppointmentOnly('msgParam');
+    // Fight flow pages / msg= → visitor wipe + same-page reload (never wipe→login, never → NA)
+    if (hasMsgParam() || isFightFlowPage()) {
+      recoverVisitorReload(hasMsgParam() ? 'msgParam' : 'fightFlowPage');
       return;
     }
 
-    // Fight hold active → only NewAppointment (never handleTooMany wipe→login)
     chrome.runtime.sendMessage(
       { action: 'slotHoldBounceIfNeeded', url: location.href },
       (holdRes) => {
@@ -112,15 +121,13 @@
         } else if (holdRes?.bounced || holdRes?.holdActive) {
           if (holdRes.bounced) {
             checking = false;
-            setLocalOverlay('Redirected to New Appointment', 'ok');
+            setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
             return;
           }
-          // hold active but not bounced yet (e.g. VisaType Too Many) → recover only
-          recoverNewAppointmentOnly('fightHold');
+          recoverVisitorReload('fightHold');
           return;
         }
 
-        // Cold path only — no fight / no msg=
         setLocalOverlay('Too Many — handling…', 'wipe');
         chrome.runtime.sendMessage(
           {
@@ -137,8 +144,11 @@
             }
             console.log('[fanika/step-1-login] Too Many response:', response);
 
-            if (response?.action === 'redirectNewAppointment') {
-              setLocalOverlay('Redirected to New Appointment', 'ok');
+            if (
+              response?.action === 'redirectNewAppointment' ||
+              response?.action === 'visitorReload'
+            ) {
+              setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
               handled = false;
               return;
             }
@@ -160,7 +170,6 @@
   }
 
   function check() {
-    if (isSlotSelectionPath()) return;
     if (isTooManyPage()) requestHandleTooMany();
   }
 

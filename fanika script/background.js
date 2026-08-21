@@ -1,7 +1,7 @@
 /**
  * Fanika background
- * Fight / slots unavailable: redirect → clean NewAppointment (keep cookies, no rotate).
- * Cold Too Many (no fight): wipe×3 → rotate → login.
+ * Fight / Too Many on NA·VisaType·slots: erase visitorId_current + reload same page.
+ * Cold Too Many (login/etc.): wipe×3 → rotate → login.
  */
 importScripts(
   'load-env.js',
@@ -199,27 +199,29 @@ async function openLogin() {
 async function handleTooMany(tabId, pageUrl) {
   const url = pageUrl || '';
 
-  // msg= / fight: never wipe→login — only NewAppointment (content script should
-  // avoid calling this; belt-and-suspenders if it still does).
+  // Fight flow / msg= / hold: never wipe→login — visitorId_current wipe + same-page reload.
   const hold = tabId != null ? await fanikaSlotHold.getHold(tabId) : null;
   const hasMsg = /[?&]msg=/i.test(url);
-  if (hasMsg || fanikaSlotHold.canRecover(hold)) {
-    await notifyOverlay(tabId, 'Fight / msg= — New Appointment only…', 'error');
-    const res = await fanikaSlotHold.recoverToNewAppointment(tabId, url);
+  const fightFlow = fanikaSlotHold.isFightFlowUrl(url);
+  if (hasMsg || fightFlow || fanikaSlotHold.canRecover(hold)) {
+    await notifyOverlay(tabId, 'Fight — clear visitorId_current, reload…', 'error');
+    const res = await fanikaSlotHold.recoverFightVisitorReload(tabId, url);
+    const softOk = res?.reason === 'inFlight' || res?.reason === 'cooldown';
     await notifyOverlay(
       tabId,
       res?.ok
-        ? 'Redirected to New Appointment'
-        : res?.reason === 'inFlight'
-          ? 'New Appointment recovery already in progress'
-          : 'New Appointment redirect failed',
-      res?.ok || res?.reason === 'inFlight' ? 'ok' : 'error'
+        ? 'Cleared visitorId_current — reloading…'
+        : softOk
+          ? 'Reload already in progress / cooldown'
+          : 'visitorId_current reload failed',
+      res?.ok || softOk ? 'ok' : 'error'
     );
     return {
-      success: Boolean(res?.ok || res?.reason === 'inFlight'),
-      action: 'redirectNewAppointment',
+      success: Boolean(res?.ok || softOk),
+      action: 'visitorReload',
       redirected: res?.target || null,
       reason: res?.reason || null,
+      visitorCookiesWiped: res?.visitorCookiesWiped ?? null,
       holdUrl: hold?.url || null,
       visaTypeUrl: hold?.visaTypeUrl || null
     };
@@ -358,13 +360,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (action === 'slotHoldRecoverVisa') {
     const tabId = sender?.tab?.id;
     fanikaSlotHold
-      .recoverToNewAppointment(tabId, message.url || sender?.tab?.url)
+      .recoverFightVisitorReload(tabId, message.url || sender?.tab?.url)
       .then((res) => {
-        const ok = Boolean(res?.ok || res?.reason === 'inFlight');
+        const ok = Boolean(
+          res?.ok || res?.reason === 'inFlight' || res?.reason === 'cooldown'
+        );
         sendResponse({
           success: ok,
-          bounced: ok,
-          action: 'redirectNewAppointment',
+          bounced: Boolean(res?.ok),
+          action: 'visitorReload',
           ...res
         });
       })
@@ -388,12 +392,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const hold = await fanikaSlotHold.getHold(tabId);
       const hasMsg = /[?&]msg=/i.test(from);
 
-      // msg= kick-out always recovers to clean NewAppointment (even if hold cleared)
+      // msg= / kick-out → visitor wipe + same-page (or hold) reload
       if (hasMsg || fanikaSlotHold.isKickoutUrl(from)) {
-        if (!fanikaSlotHold.canRecover(hold) && !hasMsg) {
+        if (!fanikaSlotHold.canRecover(hold) && !hasMsg && !fanikaSlotHold.isFightFlowUrl(from)) {
           sendResponse({ success: true, bounced: false, holdActive: false });
           return;
         }
+        // Content Too Many handler owns clean NA / VisaType / slots pages
         if (
           fanikaSlotHold.isSlotSelectionUrl(from) ||
           fanikaSlotHold.isVisaTypeUrl(from) ||
@@ -403,7 +408,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             success: true,
             bounced: false,
             holdActive: Boolean(hold && fanikaSlotHold.canRecover(hold)),
-            url: fanikaSlotHold.newAppointmentUrl(from)
+            url: fanikaSlotHold.samePageReloadUrl(from, hold)
           });
           return;
         }
@@ -411,18 +416,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         await debugLog('slotHold.earlyBounce', {
           tabId,
           from,
-          via: 'newAppointment',
+          via: 'visitorWipe+reload',
           wipeRotate: false,
           hasMsg
         });
 
-        const res = await fanikaSlotHold.recoverToNewAppointment(tabId, from);
+        const res = await fanikaSlotHold.recoverFightVisitorReload(tabId, from);
+        const softOk = res?.reason === 'inFlight' || res?.reason === 'cooldown';
         sendResponse({
-          success: Boolean(res?.ok || res?.reason === 'inFlight'),
-          bounced: Boolean(res?.ok || res?.reason === 'inFlight'),
-          holdActive: false,
-          url: res?.target || fanikaSlotHold.newAppointmentUrl(from),
-          action: 'redirectNewAppointment',
+          success: Boolean(res?.ok || softOk),
+          bounced: Boolean(res?.ok),
+          holdActive: Boolean(hold && fanikaSlotHold.canRecover(hold)),
+          url: res?.target || fanikaSlotHold.samePageReloadUrl(from, hold),
+          action: 'visitorReload',
           reason: res?.reason || null
         });
         return;
@@ -436,7 +442,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         success: true,
         bounced: false,
         holdActive: true,
-        url: hold.visaTypeUrl || hold.url || fanikaSlotHold.newAppointmentUrl(from)
+        url: hold.visaTypeUrl || hold.url || fanikaSlotHold.samePageReloadUrl(from, hold)
       });
     })().catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
@@ -622,7 +628,7 @@ rotateProxies.start()
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — msg=/fight → NewAppointment only; cold Too Many → wipe×3→login');
+console.log('[fanika] Ready — fight Too Many → visitorId_current wipe+reload; cold → wipe×3→login');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});
