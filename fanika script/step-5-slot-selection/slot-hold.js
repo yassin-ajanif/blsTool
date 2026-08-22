@@ -1,6 +1,6 @@
 /**
  * Step 5 — Slot hold on /slotselection.
- * Too Many / empty → visitorId wipe + reload (max 3×) → New Appointment.
+ * Too Many / empty → visitorId wipe → New Appointment (no reload×3).
  */
 (function () {
   if (window.__fanikaSlotHoldInstalled) return;
@@ -88,11 +88,11 @@
     if (recovering) return;
     recovering = true;
     rememberHold();
-    setOverlay('Slots unavailable — clear visitorId_current, reload…', 'restricted');
+    setOverlay('Slots unavailable — New Appointment…', 'restricted');
     chrome.runtime.sendMessage({
       action: 'debugLog',
       event: 'slotHold.slotsUnavailable',
-      data: { url: location.href, reason, protocol: 'visitorWipe+reload' }
+      data: { url: location.href, reason, protocol: 'visitorWipe→NA' }
     });
     chrome.runtime.sendMessage(
       {
@@ -105,9 +105,7 @@
           return;
         }
         if (res.action === 'fallbackNewAppointment') {
-          setOverlay('Reload failed 3× — New Appointment', 'ok');
-        } else if (res.action === 'reloadRetry') {
-          setOverlay('Reload ' + (res.attempt || '?') + '/3 — visitorId cleared…', 'restricted');
+          setOverlay('Slots fail — New Appointment', 'ok');
         }
       }
     );

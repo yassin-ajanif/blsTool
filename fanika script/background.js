@@ -1,6 +1,6 @@
 /**
  * Fanika background
- * Fight / Too Many on NA·VisaType·slots: visitor reload limits; NA×3 → login wipe.
+ * Fight: VisaType/slots → NA; NA Too Many×3 → login wipe.
  * Cold Too Many (login/etc.): wipe×3 → rotation wipe → login.
  * Access Denied: rotation wipe immediately.
  */
@@ -334,12 +334,10 @@ async function handleTooMany(tabId, pageUrl) {
           : 'Cookie wipe — opening login…'
         : res?.ok
           ? res.action === 'fallbackNewAppointment'
-            ? 'Reload failed 3× — New Appointment'
+            ? 'VisaType/slots fail — New Appointment'
             : res.action === 'naReloadRetry'
               ? 'NA reload ' + (res.attempt || '?') + '/3 — visitorId cleared…'
-              : res.action === 'reloadRetry'
-                ? 'Reload ' + (res.attempt || '?') + '/3 — visitorId cleared…'
-                : 'Cleared visitorId_current — reloading…'
+              : 'Cleared visitorId_current — reloading…'
           : softOk
             ? 'Reload already in progress / cooldown'
             : 'visitorId_current reload failed',
@@ -721,7 +719,7 @@ rotateProxies.start()
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — VisaType/slots×3→NA; NA Too Many×3→login wipe');
+console.log('[fanika] Ready — VisaType/slots→NA; NA Too Many×3→login wipe');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});

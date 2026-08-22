@@ -1,7 +1,7 @@
 /**
  * Step 1 — Too Many + Access Denied handler
  * Access Denied → rotation wipe (wipe + rotate IP → login) immediately.
- * Fight VisaType / slots: visitorId wipe + reload (max 3×) → New Appointment.
+ * Fight VisaType / slots: visitorId wipe → New Appointment (no reload×3).
  * Fight New Appointment Too Many: visitorId wipe + reload (max 3×) → login wipe.
  * Cold Too Many: wipe×3 → rotation wipe → login.
  */
@@ -99,15 +99,10 @@
               'wipe'
             );
           } else if (response.action === 'fallbackNewAppointment') {
-            setLocalOverlay('Reload failed 3× — New Appointment', 'ok');
+            setLocalOverlay('VisaType/slots fail — New Appointment', 'ok');
           } else if (response.action === 'naReloadRetry') {
             setLocalOverlay(
               'NA reload ' + (response.attempt || '?') + '/3 — visitorId cleared…',
-              'ok'
-            );
-          } else if (response.action === 'reloadRetry') {
-            setLocalOverlay(
-              'Reload ' + (response.attempt || '?') + '/3 — visitorId cleared…',
               'ok'
             );
           } else {
@@ -225,12 +220,16 @@
             }
             console.log('[fanika/step-1-login] Too Many response:', response);
 
+            if (response?.action === 'fallbackNewAppointment') {
+              setLocalOverlay('VisaType/slots fail — New Appointment', 'ok');
+              handled = false;
+              return;
+            }
+
             if (
               response?.action === 'redirectNewAppointment' ||
               response?.action === 'visitorReload' ||
-              response?.action === 'naReloadRetry' ||
-              response?.action === 'reloadRetry' ||
-              response?.action === 'fallbackNewAppointment'
+              response?.action === 'naReloadRetry'
             ) {
               setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
               handled = false;
