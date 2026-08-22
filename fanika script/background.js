@@ -1,6 +1,6 @@
 /**
  * Fanika background
- * Fight / Too Many on NA·VisaType·slots: visitorId wipe + reload (max 3×) → New Appointment.
+ * Fight / Too Many on NA·VisaType·slots: visitor reload limits; NA×3 → login wipe.
  * Cold Too Many (login/etc.): wipe×3 → rotation wipe → login.
  * Access Denied: rotation wipe immediately.
  */
@@ -259,41 +259,12 @@ async function handleAccessDenied(tabId, pageUrl) {
   });
 }
 
-async function handleTooMany(tabId, pageUrl) {
+/** Cold Too Many: full cookie wipe → login (streak 1..3, then rotation wipe). */
+async function handleColdTooManyLogin(tabId, pageUrl) {
   const url = pageUrl || '';
-
-  // Fight flow / msg= / hold: never wipe→login — visitorId_current wipe + same-page reload.
-  const hold = tabId != null ? await fanikaSlotHold.getHold(tabId) : null;
-  const hasMsg = /[?&]msg=/i.test(url);
-  const fightFlow = fanikaSlotHold.isFightFlowUrl(url);
-  if (hasMsg || fightFlow || fanikaSlotHold.canRecover(hold)) {
-    await notifyOverlay(tabId, 'Fight — clear visitorId_current, reload…', 'error');
-    const res = await fanikaSlotHold.recoverFightVisitorReload(tabId, url);
-    const softOk = res?.reason === 'inFlight' || res?.reason === 'cooldown';
-    await notifyOverlay(
-      tabId,
-      res?.ok
-        ? 'Cleared visitorId_current — reloading…'
-        : softOk
-          ? 'Reload already in progress / cooldown'
-          : 'visitorId_current reload failed',
-      res?.ok || softOk ? 'ok' : 'error'
-    );
-    return {
-      success: Boolean(res?.ok || softOk),
-      action: 'visitorReload',
-      redirected: res?.target || null,
-      reason: res?.reason || null,
-      visitorCookiesWiped: res?.visitorCookiesWiped ?? null,
-      holdUrl: hold?.url || null,
-      visaTypeUrl: hold?.visaTypeUrl || null
-    };
-  }
-
   let wipeStreak = await getTooManyWipeCount();
-  await debugLog('tooMany.start', { tabId, url, wipeStreak });
+  await debugLog('tooMany.cold.start', { tabId, url, wipeStreak });
 
-  // Already wiped 3 times and still on 429 → rotation wipe
   if (wipeStreak >= MAX_WIPES_BEFORE_ROTATE) {
     const res = await runRotationWipeProtocol(tabId, { url, wipeStreak, via: 'tooMany' });
     if (res.success) {
@@ -302,7 +273,6 @@ async function handleTooMany(tabId, pageUrl) {
     return { ...res, wipeStreak };
   }
 
-  // Wipe streak 1..3
   wipeStreak += 1;
   await setTooManyWipeCount(wipeStreak);
   await notifyOverlay(
@@ -329,6 +299,67 @@ async function handleTooMany(tabId, pageUrl) {
     redirected: LOGIN_URL,
     ip: cachedPublicIp
   };
+}
+
+async function runFightRecoverOrEscalate(tabId, pageUrl) {
+  const res = await fanikaSlotHold.recoverFightVisitorReload(tabId, pageUrl);
+  if (res?.action !== 'escalateLoginWipe') return res;
+
+  await debugLog('tooMany.naEscalateLogin', {
+    tabId,
+    url: pageUrl,
+    attempt: res.attempt,
+    max: res.max
+  });
+  await notifyOverlay(tabId, 'NA reload failed 3× — login wipe…', 'wipe');
+  return handleColdTooManyLogin(tabId, pageUrl);
+}
+
+async function handleTooMany(tabId, pageUrl) {
+  const url = pageUrl || '';
+
+  // Fight flow / msg= / hold: visitor reload (VisaType/slots/NA limits) or escalate login wipe.
+  const hold = tabId != null ? await fanikaSlotHold.getHold(tabId) : null;
+  const hasMsg = /[?&]msg=/i.test(url);
+  const fightFlow = fanikaSlotHold.isFightFlowUrl(url);
+  if (hasMsg || fightFlow || fanikaSlotHold.canRecover(hold)) {
+    const res = await runFightRecoverOrEscalate(tabId, url);
+    const softOk = res?.reason === 'inFlight' || res?.reason === 'cooldown';
+    const loginActions = res?.action === 'goLogin' || res?.action === 'rotated';
+    await notifyOverlay(
+      tabId,
+      loginActions
+        ? res.action === 'rotated'
+          ? 'New IP — opening login…'
+          : 'Cookie wipe — opening login…'
+        : res?.ok
+          ? res.action === 'fallbackNewAppointment'
+            ? 'Reload failed 3× — New Appointment'
+            : res.action === 'naReloadRetry'
+              ? 'NA reload ' + (res.attempt || '?') + '/3 — visitorId cleared…'
+              : res.action === 'reloadRetry'
+                ? 'Reload ' + (res.attempt || '?') + '/3 — visitorId cleared…'
+                : 'Cleared visitorId_current — reloading…'
+          : softOk
+            ? 'Reload already in progress / cooldown'
+            : 'visitorId_current reload failed',
+      res?.ok || softOk || loginActions ? 'ok' : 'error'
+    );
+    return {
+      success: Boolean(res?.ok || softOk || loginActions),
+      action: res?.action || 'visitorReload',
+      redirected: res?.target || res?.redirected || null,
+      reason: res?.reason || null,
+      visitorCookiesWiped: res?.visitorCookiesWiped ?? null,
+      holdUrl: hold?.url || null,
+      visaTypeUrl: hold?.visaTypeUrl || null,
+      wipeStreak: res?.wipeStreak,
+      attempt: res?.attempt,
+      max: res?.max
+    };
+  }
+
+  return handleColdTooManyLogin(tabId, url);
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -382,27 +413,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (action === 'slotHoldRecoverVisa') {
     const tabId = sender?.tab?.id;
-    fanikaSlotHold
-      .recoverFightVisitorReload(tabId, message.url || sender?.tab?.url)
-      .then((res) => {
+    const pageUrl = message.url || sender?.tab?.url;
+    (async () => {
+      try {
+        let res = await fanikaSlotHold.recoverFightVisitorReload(tabId, pageUrl);
+        if (res?.action === 'escalateLoginWipe') {
+          res = await handleColdTooManyLogin(tabId, pageUrl);
+        }
         const ok = Boolean(
-          res?.ok || res?.reason === 'inFlight' || res?.reason === 'cooldown'
+          res?.ok ||
+            res?.success ||
+            res?.reason === 'inFlight' ||
+            res?.reason === 'cooldown' ||
+            res?.action === 'goLogin' ||
+            res?.action === 'rotated'
         );
         sendResponse({
           success: ok,
-          bounced: Boolean(res?.ok),
+          bounced: Boolean(res?.ok && res?.target),
           ok: res?.ok,
           ...res
         });
-      })
-      .catch((err) => sendResponse({ success: false, error: err.message }));
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
     return true;
   }
 
   if (action === 'slotHoldFightSuccess') {
     const tabId = sender?.tab?.id;
     fanikaSlotHold
-      .resetReloadAttempts(tabId)
+      .resetVisaSlotsReloadAttempts(tabId)
+      .then(() => sendResponse({ success: true }))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldNaFightSuccess') {
+    const tabId = sender?.tab?.id;
+    fanikaSlotHold
+      .resetNaReloadAttempts(tabId)
       .then(() => sendResponse({ success: true }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
@@ -670,7 +721,7 @@ rotateProxies.start()
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — fight VisaType/slots: visitorWipe+reload×3→NA; cold → wipe×3→login');
+console.log('[fanika] Ready — VisaType/slots×3→NA; NA Too Many×3→login wipe');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});

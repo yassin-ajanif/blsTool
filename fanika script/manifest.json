@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.22",
-  "description": "Fanika — fight: visitorId wipe + reload×3 → New Appointment",
+  "version": "0.2.24",
+  "description": "Fanika — fight: reload×3→NA; NA Too Many×3→login wipe",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",

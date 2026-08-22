@@ -1,6 +1,7 @@
 /**
  * Background: remember SlotSelection + VisaType URLs.
- * VisaType / slots Too Many → visitorId wipe + reload same page (max 3×) → New Appointment.
+ * VisaType / slots: visitorId wipe + reload (max 3×) → New Appointment.
+ * New Appointment Too Many: visitorId wipe + reload (max 3×) → login wipe protocol.
  */
 (function (global) {
   const HOLD_STORE = 'fanikaSlotHoldByTab';
@@ -198,22 +199,58 @@
     await setHoldMap(map);
   }
 
-  async function resetReloadAttempts(tabId) {
+  async function resetVisaSlotsReloadAttempts(tabId) {
     const hold = await getHold(tabId);
     if (!hold || !hold.reloadAttempts) return;
     await patchHold(tabId, {
       active: hold.active !== false,
       visaTypeUrl: hold.visaTypeUrl,
       url: hold.url,
-      reloadAttempts: 0
+      reloadAttempts: 0,
+      naReloadAttempts: hold.naReloadAttempts || 0
     });
     if (typeof debugLog === 'function') {
-      await debugLog('slotHold.reloadAttempts.reset', { tabId });
+      await debugLog('slotHold.reloadAttempts.reset', { tabId, scope: 'visaSlots' });
+    }
+  }
+
+  async function resetNaReloadAttempts(tabId) {
+    const hold = await getHold(tabId);
+    if (!hold || !hold.naReloadAttempts) return;
+    await patchHold(tabId, {
+      active: hold.active !== false,
+      visaTypeUrl: hold.visaTypeUrl,
+      url: hold.url,
+      reloadAttempts: hold.reloadAttempts || 0,
+      naReloadAttempts: 0
+    });
+    if (typeof debugLog === 'function') {
+      await debugLog('slotHold.naReloadAttempts.reset', { tabId, scope: 'newAppointment' });
+    }
+  }
+
+  /** Reset both counters (legacy). Prefer scoped resets. */
+  async function resetReloadAttempts(tabId) {
+    const hold = await getHold(tabId);
+    if (!hold || (!hold.reloadAttempts && !hold.naReloadAttempts)) return;
+    await patchHold(tabId, {
+      active: hold.active !== false,
+      visaTypeUrl: hold.visaTypeUrl,
+      url: hold.url,
+      reloadAttempts: 0,
+      naReloadAttempts: 0
+    });
+    if (typeof debugLog === 'function') {
+      await debugLog('slotHold.reloadAttempts.reset', { tabId, scope: 'all' });
     }
   }
 
   function isVisaOrSlotsReloadPage(url) {
     return isVisaTypeUrl(url) || isSlotSelectionUrl(url);
+  }
+
+  function isNewAppointmentReloadPage(url) {
+    return isNewAppointmentUrl(url);
   }
 
   async function wipeVisitorIdCookies() {
@@ -274,8 +311,8 @@
   }
 
   /**
-   * VisaType / slots: visitorId wipe + reload up to 3×, then clean New Appointment.
-   * Other fight pages: visitor wipe + same-page reload (no NA fallback).
+   * VisaType / slots: visitorId wipe + reload up to 3× → New Appointment.
+   * New Appointment: visitorId wipe + reload up to 3× → escalate login wipe.
    */
   async function recoverFightVisitorReload(tabId, fromUrl) {
     const hold = (await getHold(tabId)) || {};
@@ -301,7 +338,9 @@
     try {
       const wiped = await wipeVisitorIdCookies();
       const visaOrSlots = isVisaOrSlotsReloadPage(url);
+      const naPage = isNewAppointmentReloadPage(url);
       const attempts = Number(hold.reloadAttempts) || 0;
+      const naAttempts = Number(hold.naReloadAttempts) || 0;
 
       if (visaOrSlots && attempts >= MAX_RELOAD_ATTEMPTS) {
         const target = newAppointmentUrl(url || hold.visaTypeUrl || hold.url);
@@ -309,7 +348,8 @@
           active: hold.active !== false,
           visaTypeUrl: hold.visaTypeUrl,
           url: hold.url,
-          reloadAttempts: 0
+          reloadAttempts: 0,
+          naReloadAttempts: hold.naReloadAttempts || 0
         });
 
         if (typeof debugLog === 'function') {
@@ -338,15 +378,59 @@
         };
       }
 
+      if (naPage && naAttempts >= MAX_RELOAD_ATTEMPTS) {
+        await patchHold(tabId, {
+          active: hold.active !== false,
+          visaTypeUrl: hold.visaTypeUrl,
+          url: hold.url,
+          reloadAttempts: hold.reloadAttempts || 0,
+          naReloadAttempts: 0
+        });
+
+        if (typeof debugLog === 'function') {
+          await debugLog('slotHold.escalateLoginWipe', {
+            tabId,
+            fromUrl: url,
+            naReloadAttempts: naAttempts,
+            max: MAX_RELOAD_ATTEMPTS,
+            visitorCookiesWiped: wiped
+          });
+        }
+
+        return {
+          ok: true,
+          action: 'escalateLoginWipe',
+          attempt: naAttempts,
+          max: MAX_RELOAD_ATTEMPTS,
+          visitorCookiesWiped: wiped
+        };
+      }
+
       const target = samePageReloadUrl(url, hold);
-      const nextAttempt = visaOrSlots ? attempts + 1 : attempts;
+      let nextAttempt = attempts;
+      let nextNaAttempt = naAttempts;
+      let action = 'visitorReload';
+      let overlayText = 'Too Many — cleared visitorId_current, reloading…';
 
       if (visaOrSlots) {
+        nextAttempt = attempts + 1;
+        action = 'reloadRetry';
+        overlayText =
+          'Reload ' + nextAttempt + '/' + MAX_RELOAD_ATTEMPTS + ' — visitorId cleared…';
+      } else if (naPage) {
+        nextNaAttempt = naAttempts + 1;
+        action = 'naReloadRetry';
+        overlayText =
+          'NA reload ' + nextNaAttempt + '/' + MAX_RELOAD_ATTEMPTS + ' — visitorId cleared…';
+      }
+
+      if (visaOrSlots || naPage) {
         await patchHold(tabId, {
           active: true,
           visaTypeUrl: hold.visaTypeUrl,
           url: hold.url,
-          reloadAttempts: nextAttempt
+          reloadAttempts: nextAttempt,
+          naReloadAttempts: nextNaAttempt
         });
       }
 
@@ -356,25 +440,22 @@
           fromUrl: url,
           backTo: target,
           reloadAttempt: visaOrSlots ? nextAttempt : null,
-          maxReloadAttempts: visaOrSlots ? MAX_RELOAD_ATTEMPTS : null,
+          naReloadAttempt: naPage ? nextNaAttempt : null,
+          maxReloadAttempts: visaOrSlots || naPage ? MAX_RELOAD_ATTEMPTS : null,
           visitorCookiesWiped: wiped,
           wipeAuth: false,
           rotate: false
         });
       }
 
-      const overlayText = visaOrSlots
-        ? 'Reload ' + nextAttempt + '/' + MAX_RELOAD_ATTEMPTS + ' — visitorId cleared…'
-        : 'Too Many — cleared visitorId_current, reloading…';
-
       const navOk = await navigateHold(tabId, target, overlayText);
       return {
         ok: navOk,
         target,
         visitorCookiesWiped: wiped,
-        action: visaOrSlots ? 'reloadRetry' : 'visitorReload',
-        attempt: visaOrSlots ? nextAttempt : undefined,
-        max: visaOrSlots ? MAX_RELOAD_ATTEMPTS : undefined
+        action,
+        attempt: visaOrSlots ? nextAttempt : naPage ? nextNaAttempt : undefined,
+        max: visaOrSlots || naPage ? MAX_RELOAD_ATTEMPTS : undefined
       };
     } finally {
       recoverInFlight.delete(tabId);
@@ -414,7 +495,8 @@
     if (!url || !isBls(url)) return;
 
     if (isCleanNewAppointmentUrl(url)) {
-      await resetReloadAttempts(tabId);
+      // URL alone is not success (429 Too Many still uses clean NA path) — only reset VisaType/slots counter.
+      await resetVisaSlotsReloadAttempts(tabId);
       return;
     }
 
@@ -459,7 +541,7 @@
       debugLog('slotHold.guard.installed', {
         reloadHintMs: RELOAD_HINT_MS,
         maxReloadAttempts: MAX_RELOAD_ATTEMPTS,
-        protocol: 'visitorWipe+reload×3→NA'
+        protocol: 'visitorWipe+reload×3→NA; NA×3→loginWipe'
       });
     }
   }
@@ -476,6 +558,8 @@
     recoverToNewAppointment,
     recoverFightVisitorReload,
     resetReloadAttempts,
+    resetVisaSlotsReloadAttempts,
+    resetNaReloadAttempts,
     wipeVisitorIdCookies,
     samePageReloadUrl,
     newAppointmentUrl,

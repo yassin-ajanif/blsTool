@@ -19,6 +19,7 @@
     event: 'appointmentCaptcha.start',
     data: { url: location.href }
   });
+  chrome.runtime.sendMessage({ action: 'slotHoldNaFightSuccess' });
   chrome.runtime.sendMessage({
     action: 'overlayStatus',
     text: 'Appointment captcha — solving…',
