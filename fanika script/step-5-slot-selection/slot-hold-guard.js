@@ -1,11 +1,12 @@
 /**
  * Background: remember SlotSelection + VisaType URLs.
- * VisaType / slots: visitorId wipe → New Appointment (no reload×3).
+ * VisaType / slots: visitorId wipe → wait 3s (show page) → New Appointment.
  * New Appointment Too Many: visitorId wipe + reload (max 3×) → login wipe protocol.
  */
 (function (global) {
   const HOLD_STORE = 'fanikaSlotHoldByTab';
   const RECOVER_COOLDOWN_MS = 5000;
+  const VISASLOTS_NA_DELAY_MS = 3000;
   const MAX_RELOAD_ATTEMPTS = 3;
   const RELOAD_HINT_MS = 5000;
   const DEFAULT_NEW_APPOINTMENT =
@@ -279,6 +280,21 @@
     return count;
   }
 
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function notifyTabOverlay(tabId, text, phase) {
+    if (tabId == null) return;
+    try {
+      await chrome.tabs.sendMessage(tabId, {
+        action: 'overlayStatus',
+        text,
+        phase: phase || 'info'
+      });
+    } catch (_) {}
+  }
+
   async function navigateHold(tabId, targetUrl, overlayText) {
     if (!targetUrl) return false;
     try {
@@ -311,7 +327,7 @@
   }
 
   /**
-   * VisaType / slots: visitorId wipe → New Appointment immediately.
+   * VisaType / slots: visitorId wipe → wait 3s so user can see the page → New Appointment.
    * New Appointment: visitorId wipe + reload up to 3× → escalate login wipe.
    */
   async function recoverFightVisitorReload(tabId, fromUrl) {
@@ -341,7 +357,7 @@
       const naPage = isNewAppointmentReloadPage(url);
       const naAttempts = Number(hold.naReloadAttempts) || 0;
 
-      // VisaType / slots: no reload×3 — go straight to New Appointment
+      // VisaType / slots: show invalid page 3s, then New Appointment
       if (visaOrSlots) {
         const target = newAppointmentUrl(url || hold.visaTypeUrl || hold.url);
         await patchHold(tabId, {
@@ -352,14 +368,24 @@
           naReloadAttempts: hold.naReloadAttempts || 0
         });
 
+        const waitSec = Math.round(VISASLOTS_NA_DELAY_MS / 1000);
+        await notifyTabOverlay(
+          tabId,
+          'Invalid page — New Appointment in ' + waitSec + 's…',
+          'restricted'
+        );
+
         if (typeof debugLog === 'function') {
           await debugLog('slotHold.visaSlotsDirectNA', {
             tabId,
             fromUrl: url,
             backTo: target,
+            delayMs: VISASLOTS_NA_DELAY_MS,
             visitorCookiesWiped: wiped
           });
         }
+
+        await sleep(VISASLOTS_NA_DELAY_MS);
 
         const navOk = await navigateHold(
           tabId,
@@ -370,7 +396,8 @@
           ok: navOk,
           target,
           visitorCookiesWiped: wiped,
-          action: 'fallbackNewAppointment'
+          action: 'fallbackNewAppointment',
+          delayMs: VISASLOTS_NA_DELAY_MS
         };
       }
 
@@ -527,7 +554,7 @@
       debugLog('slotHold.guard.installed', {
         reloadHintMs: RELOAD_HINT_MS,
         maxReloadAttempts: MAX_RELOAD_ATTEMPTS,
-        protocol: 'visaSlots→NA; NA×3→loginWipe'
+        protocol: 'visaSlots→wait3s→NA; NA×3→loginWipe'
       });
     }
   }

@@ -1,7 +1,7 @@
 /**
  * Step 1 — Too Many + Access Denied handler
  * Access Denied → rotation wipe (wipe + rotate IP → login) immediately.
- * Fight VisaType / slots: visitorId wipe → New Appointment (no reload×3).
+ * Fight VisaType / slots: show page 3s → visitorId wipe → New Appointment.
  * Fight New Appointment Too Many: visitorId wipe + reload (max 3×) → login wipe.
  * Cold Too Many: wipe×3 → rotation wipe → login.
  */
@@ -68,7 +68,7 @@
   }
 
   function recoverVisitorReload(reason) {
-    setLocalOverlay('Too Many — clearing visitorId_current, reload…', 'restricted');
+    setLocalOverlay('Invalid page — New Appointment in 3s…', 'restricted');
     chrome.runtime.sendMessage({
       action: 'debugLog',
       event: 'page.tooMany.recoverVisitorReload',

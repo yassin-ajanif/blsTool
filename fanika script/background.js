@@ -334,7 +334,7 @@ async function handleTooMany(tabId, pageUrl) {
           : 'Cookie wipe — opening login…'
         : res?.ok
           ? res.action === 'fallbackNewAppointment'
-            ? 'VisaType/slots fail — New Appointment'
+            ? 'VisaType/slots — New Appointment (after 3s)'
             : res.action === 'naReloadRetry'
               ? 'NA reload ' + (res.attempt || '?') + '/3 — visitorId cleared…'
               : 'Cleared visitorId_current — reloading…'
