@@ -59,6 +59,7 @@ function sleep(ms) {
 }
 
 async function fetchPublicIp(force) {
+  if (!force && cachedPublicIp) return cachedPublicIp;
   if (!force && ipFetchPromise) return ipFetchPromise;
 
   const run = (async () => {
@@ -68,18 +69,18 @@ async function fetchPublicIp(force) {
       const text = (await res.text()).trim();
       if (!text) throw new Error('Empty IP response');
       cachedPublicIp = text;
-      await debugLog('ip.fetch.ok', { ip: cachedPublicIp });
+      await debugLog('ip.fetch.ok', { ip: cachedPublicIp, force: Boolean(force) });
       return cachedPublicIp;
     } catch (err) {
       console.error('[fanika] IP lookup failed:', err);
-      await debugLog('ip.fetch.fail', { error: err.message });
+      await debugLog('ip.fetch.fail', { error: err.message, force: Boolean(force) });
       throw err;
     } finally {
       ipFetchPromise = null;
     }
   })();
 
-  if (!force) ipFetchPromise = run;
+  ipFetchPromise = run;
   return run;
 }
 
@@ -106,10 +107,26 @@ async function lookupIpCity(ip) {
   }
 }
 
+/** force=true: hit icanhazip. force=false: return cache only (no network). */
 async function getPublicIpInfo(force) {
-  const ip = await fetchPublicIp(force);
+  if (!force) {
+    if (cachedPublicIp) {
+      return {
+        ip: cachedPublicIp,
+        city: cachedIpGeo.ip === cachedPublicIp ? cachedIpGeo.city : null,
+        country: cachedIpGeo.ip === cachedPublicIp ? cachedIpGeo.country : null,
+        cached: true
+      };
+    }
+    // No cache yet — one network fetch, then cache for the rest of the session.
+    const ip = await fetchPublicIp(false);
+    const city = await lookupIpCity(ip);
+    return { ip, city, country: cachedIpGeo.country, cached: false };
+  }
+
+  const ip = await fetchPublicIp(true);
   const city = await lookupIpCity(ip);
-  return { ip, city, country: cachedIpGeo.country };
+  return { ip, city, country: cachedIpGeo.country, cached: false };
 }
 
 function tryStore() {
@@ -558,7 +575,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (action === 'getPublicIp') {
-    getPublicIpInfo(false)
+    const force = Boolean(message?.force);
+    getPublicIpInfo(force)
       .then((info) => sendResponse({ success: true, ...info }))
       .catch((err) => sendResponse({ success: false, error: err.message, ip: null, city: null }));
     return true;

@@ -1,5 +1,6 @@
 /**
- * Step 1 — Public IP overlay + status (wipe / rotating)
+ * Public IP overlay + status (wipe / rotating).
+ * Fetches icanhazip only on login (or when force after rotate); other pages use cache.
  */
 (function () {
   if (window.__fanikaIpOverlayInstalled) return;
@@ -16,6 +17,11 @@
     ok: { color: '#1b5e20', bg: 'rgba(232,245,233,0.96)', border: '#2e7d32' },
     error: { color: '#b71c1c', bg: 'rgba(255,235,238,0.96)', border: '#c62828' }
   };
+
+  function isLoginPage() {
+    const p = (location.pathname || '').toLowerCase();
+    return p.includes('/account/login') && !p.includes('loginsubmit') && !p.includes('captcha');
+  }
 
   function ensureOverlay() {
     let el = document.getElementById(OVERLAY_ID);
@@ -90,8 +96,9 @@
     return response.city ? 'IP: ' + response.ip + ' · ' + response.city : 'IP: ' + response.ip;
   }
 
-  function requestIp() {
-    chrome.runtime.sendMessage({ action: 'getPublicIp' }, (response) => {
+  /** force: network fetch. Otherwise use background cache (no icanhazip). */
+  function requestIp(force) {
+    chrome.runtime.sendMessage({ action: 'getPublicIp', force: Boolean(force) }, (response) => {
       if (chrome.runtime.lastError) {
         setOverlayIp('IP: unavailable');
         return;
@@ -103,14 +110,16 @@
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.action !== 'overlayStatus') return;
     setOverlayStatus(message.text || '', message.phase || 'info');
+    // After rotate / new IP confirmed — refresh once
     if (message.phase === 'ok' || message.phase === 'rotating') {
-      requestIp();
+      requestIp(true);
     }
   });
 
   function mount() {
     ensureOverlay();
-    requestIp();
+    // Network fetch only on login; later pages read cache
+    requestIp(isLoginPage());
     chrome.runtime.sendMessage({ action: 'getTooManyWipeCount' }, (res) => {
       if (chrome.runtime.lastError || !res?.success) return;
       if (res.wipeStreak > 0) {

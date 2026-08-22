@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.26",
-  "description": "Fanika — VisaType/slots wait 3s→NA; NA×3→login wipe",
+  "version": "0.2.28",
+  "description": "Fanika — cache public IP; fetch once at login",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",
