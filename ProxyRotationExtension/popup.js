@@ -1,6 +1,31 @@
 const btn = document.getElementById('btn');
 const disconnectBtn = document.getElementById('disconnect');
 const out = document.getElementById('out');
+const popupTimer = document.getElementById('popup-timer');
+
+function pad(n, len) {
+  return String(n).padStart(len || 2, '0');
+}
+
+function formatNow() {
+  const t = new Date();
+  return (
+    pad(t.getHours()) +
+    ':' +
+    pad(t.getMinutes()) +
+    ':' +
+    pad(t.getSeconds()) +
+    ':' +
+    pad(t.getMilliseconds(), 3)
+  );
+}
+
+function tickPopupTimer() {
+  if (popupTimer) popupTimer.textContent = formatNow();
+  requestAnimationFrame(tickPopupTimer);
+}
+
+tickPopupTimer();
 
 function show(res, fallback) {
   if (chrome.runtime.lastError) {

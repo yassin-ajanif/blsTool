@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Proxy Rotation Lab",
-  "version": "0.1.0",
-  "description": "Step 1 — Chrome proxy + silent IPRoyal auth + icanhazip",
+  "version": "0.1.1",
+  "description": "Chrome proxy + IPRoyal rotate + center timer overlay",
   "action": {
     "default_title": "Proxy Rotation Lab",
     "default_popup": "popup.html"
@@ -20,5 +20,12 @@
   ],
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["center-timer.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }
