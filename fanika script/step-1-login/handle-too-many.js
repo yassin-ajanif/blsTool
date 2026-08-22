@@ -1,7 +1,8 @@
 /**
- * Step 1 — Too Many handler
- * On NewAppointment / VisaType / slots (or msg= / fight): erase visitorId_current + reload same page.
- * Never redirect to NewAppointment. Else (cold login/etc.): wipe×3 → rotate → login.
+ * Step 1 — Too Many + Access Denied handler
+ * Access Denied → rotation wipe (wipe + rotate IP → login) immediately.
+ * Fight pages / msg=: visitorId_current wipe + same-page reload.
+ * Cold Too Many: wipe×3 → rotation wipe → login.
  */
 (function () {
   if (window.__fanikaStep1TooManyInstalled) return;
@@ -9,6 +10,13 @@
 
   let handled = false;
   let checking = false;
+
+  function isAccessDeniedPage() {
+    const h1Text = document.querySelector('h1')?.textContent?.trim() || '';
+    if (/access\s+denied/i.test(h1Text)) return true;
+    const snippet = (document.body?.innerText || '').slice(0, 800);
+    return /access\s+denied/i.test(snippet);
+  }
 
   function isTooManyPage() {
     const h1Text = document.querySelector('h1')?.textContent?.trim() || '';
@@ -94,6 +102,57 @@
     );
   }
 
+  function requestHandleAccessDenied() {
+    if (handled || checking) return;
+
+    checking = true;
+    handled = true;
+    console.log('[fanika/step-1-login] Access Denied detected');
+
+    chrome.runtime.sendMessage({
+      action: 'debugLog',
+      event: 'page.accessDenied.detected',
+      data: { url: location.href, h1: document.querySelector('h1')?.textContent?.trim() }
+    });
+
+    setLocalOverlay('Access Denied — wipe + rotate IP…', 'rotating');
+    chrome.runtime.sendMessage(
+      { action: 'handleAccessDenied', pageUrl: location.href },
+      (response) => {
+        checking = false;
+        if (chrome.runtime.lastError) {
+          console.error('[fanika/step-1-login]', chrome.runtime.lastError.message);
+          setLocalOverlay('Rotation wipe error', 'error');
+          handled = false;
+          return;
+        }
+        console.log('[fanika/step-1-login] Access Denied response:', response);
+
+        if (response?.success) {
+          setLocalOverlay('New IP — opening login…', 'ok');
+          return;
+        }
+
+        if (response?.reason === 'inFlight') {
+          setLocalOverlay('Rotation wipe in progress…', 'wipe');
+          handled = false;
+          return;
+        }
+
+        if (response?.action === 'rotateFailed' || response?.action === 'ipUnchanged') {
+          setLocalOverlay(response.error || 'IP rotate failed — retry in a moment', 'error');
+          setTimeout(() => {
+            handled = false;
+          }, 5000);
+          return;
+        }
+
+        setLocalOverlay('Rotation wipe failed', 'error');
+        handled = false;
+      }
+    );
+  }
+
   function requestHandleTooMany() {
     if (handled || checking) return;
 
@@ -170,7 +229,8 @@
   }
 
   function check() {
-    if (isTooManyPage()) requestHandleTooMany();
+    if (isAccessDeniedPage()) requestHandleAccessDenied();
+    else if (isTooManyPage()) requestHandleTooMany();
   }
 
   if (document.readyState === 'loading') {

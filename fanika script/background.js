@@ -1,7 +1,8 @@
 /**
  * Fanika background
  * Fight / Too Many on NA·VisaType·slots: erase visitorId_current + reload same page.
- * Cold Too Many (login/etc.): wipe×3 → rotate → login.
+ * Cold Too Many (login/etc.): wipe×3 → rotation wipe → login.
+ * Access Denied: rotation wipe immediately.
  */
 importScripts(
   'load-env.js',
@@ -21,6 +22,7 @@ const MAX_WIPES_BEFORE_ROTATE = 3;
 let cachedPublicIp = null;
 let cachedIpGeo = { ip: null, city: null, country: null };
 let ipFetchPromise = null;
+const rotationWipeInFlight = new Set();
 
 async function ensureTrueCaptchaFromEnv() {
   // Avoid reloading env repeatedly.
@@ -187,13 +189,74 @@ async function openLogin() {
   try {
     await fetchPublicIp(true);
   } catch (_) {}
-  chrome.tabs.create({ url: LOGIN_URL });
+  chrome.tabs.create({ url: LOGIN_URL + '?fresh=1' });
   return {
     success: true,
-    url: LOGIN_URL,
+    url: LOGIN_URL + '?fresh=1',
     cookiesWiped: cookieCount,
     ip: cachedPublicIp
   };
+}
+
+/**
+ * Wipe site data + rotate until public IP changes, then open login.
+ * Used for Access Denied and after Too Many wipe streak.
+ */
+async function runRotationWipeProtocol(tabId, meta) {
+  const key = tabId != null ? String(tabId) : 'global';
+  if (rotationWipeInFlight.has(key)) {
+    return { success: false, reason: 'inFlight' };
+  }
+  rotationWipeInFlight.add(key);
+
+  const info = meta || {};
+  try {
+    await debugLog('rotationWipe.start', { tabId, ...info });
+    await notifyOverlay(tabId, 'Wipe + rotate IP…', 'rotating');
+
+    let waited = null;
+    try {
+      waited = await rotateProxies.rotateUntilIpChanges();
+    } catch (err) {
+      await debugLog('rotationWipe.fail', { tabId, error: err.message, ...info });
+      await notifyOverlay(tabId, 'Rotate failed — ' + err.message, 'error');
+      return { success: false, action: 'rotateFailed', error: err.message };
+    }
+
+    if (!waited.changed) {
+      await notifyOverlay(
+        tabId,
+        'IP unchanged after rotate (' + (waited.ip || '?') + ')',
+        'error'
+      );
+      await debugLog('rotationWipe.unchanged', { tabId, ...waited, ...info });
+      return { success: false, action: 'ipUnchanged', ...waited };
+    }
+
+    cachedPublicIp = waited.ip;
+    await lookupIpCity(waited.ip);
+    const citySuffix = cachedIpGeo.city ? ' (' + cachedIpGeo.city + ')' : '';
+    await notifyOverlay(tabId, 'New IP: ' + waited.ip + citySuffix + ' — login…', 'ok');
+    await setTooManyWipeCount(0);
+    await goToLogin(tabId);
+    await debugLog('rotationWipe.done', { tabId, ...waited, ...info });
+    return {
+      success: true,
+      action: 'rotationWipe',
+      previousIp: waited.previousIp,
+      ip: waited.ip,
+      redirected: LOGIN_URL
+    };
+  } finally {
+    rotationWipeInFlight.delete(key);
+  }
+}
+
+async function handleAccessDenied(tabId, pageUrl) {
+  return runRotationWipeProtocol(tabId, {
+    url: pageUrl || '',
+    reason: 'accessDenied'
+  });
 }
 
 async function handleTooMany(tabId, pageUrl) {
@@ -230,53 +293,13 @@ async function handleTooMany(tabId, pageUrl) {
   let wipeStreak = await getTooManyWipeCount();
   await debugLog('tooMany.start', { tabId, url, wipeStreak });
 
-  // Already wiped 3 times and still on 429 → rotate IP first
+  // Already wiped 3 times and still on 429 → rotation wipe
   if (wipeStreak >= MAX_WIPES_BEFORE_ROTATE) {
-    await notifyOverlay(tabId, 'Rotating IP…', 'rotating');
-    let waited = null;
-    try {
-      waited = await rotateProxies.rotateUntilIpChanges();
-    } catch (err) {
-      await debugLog('proxy.rotate.fail', { error: err.message });
-      await notifyOverlay(tabId, 'Rotate failed — ' + err.message, 'error');
-      return {
-        success: false,
-        action: 'rotateFailed',
-        error: err.message,
-        wipeStreak
-      };
+    const res = await runRotationWipeProtocol(tabId, { url, wipeStreak, via: 'tooMany' });
+    if (res.success) {
+      return { ...res, action: 'rotated' };
     }
-
-    if (!waited.changed) {
-      await notifyOverlay(
-        tabId,
-        'IP unchanged after rotate (' + (waited.ip || '?') + ')',
-        'error'
-      );
-      await debugLog('proxy.rotate.unchanged', waited);
-      return {
-        success: false,
-        action: 'ipUnchanged',
-        ...waited,
-        wipeStreak
-      };
-    }
-
-    cachedPublicIp = waited.ip;
-    await lookupIpCity(waited.ip);
-    const citySuffix = cachedIpGeo.city ? ' (' + cachedIpGeo.city + ')' : '';
-    await notifyOverlay(tabId, 'New IP: ' + waited.ip + citySuffix + ' — reopening login…', 'ok');
-    await setTooManyWipeCount(0);
-    await goToLogin(tabId);
-    await debugLog('tooMany.rotated', waited);
-    return {
-      success: true,
-      action: 'rotated',
-      previousIp: waited.previousIp,
-      ip: waited.ip,
-      count: 0,
-      redirected: LOGIN_URL
-    };
+    return { ...res, wipeStreak };
   }
 
   // Wipe streak 1..3
@@ -531,6 +554,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (action === 'wipeAllCookiesAndReload' || action === 'handleTooMany') {
     handleTooMany(sender?.tab?.id, message.pageUrl || sender?.tab?.url)
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'handleAccessDenied' || action === 'rotationWipe') {
+    runRotationWipeProtocol(sender?.tab?.id, {
+      url: message.pageUrl || sender?.tab?.url || '',
+      reason: message.reason || action
+    })
       .then(sendResponse)
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;

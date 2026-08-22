@@ -20,6 +20,13 @@
     return pathLower().includes('/appointment/slotselection');
   }
 
+  function isAccessDeniedBanner() {
+    const h1 = (document.querySelector('h1')?.textContent || '').trim();
+    if (/access\s+denied/i.test(h1)) return true;
+    const snippet = (document.body?.innerText || '').slice(0, 800);
+    return /access\s+denied/i.test(snippet);
+  }
+
   function isRestrictedBanner() {
     const h1 = (document.querySelector('h1')?.textContent || '').trim();
     const bodyText = (document.body?.innerText || '').slice(0, 2000);
@@ -118,6 +125,7 @@
     }
 
     if (isSlotsUnavailable()) {
+      if (isAccessDeniedBanner()) return;
       const reason = isRestrictedBanner() ? 'restrictedOrNoSlotsText' : 'emptyPage';
       recoverVisitorReload(reason);
     }

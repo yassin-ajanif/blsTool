@@ -40,6 +40,9 @@
 
   // Login GET: wipe once (or when ?fresh=1), then open login again
   if (isLoginPage() && (forceFresh() || !sessionStorage.getItem(WIPE_ONCE_KEY))) {
+    if (window.fanikaLoginTimes) {
+      window.fanikaLoginTimes.clearLoginTimes();
+    }
     sessionStorage.setItem(WIPE_ONCE_KEY, '1');
     chrome.runtime.sendMessage({
       action: 'debugLog',
@@ -69,6 +72,14 @@
       });
 
       wipeCookies(() => {
+        if (window.fanikaLoginTimes) {
+          const ts = window.fanikaLoginTimes.saveLoginSubmitTime();
+          chrome.runtime.sendMessage({
+            action: 'debugLog',
+            event: 'loginSubmit.formPost',
+            data: { url: location.href, action: form.action, time: ts }
+          });
+        }
         form.dataset.fanikaWipedBeforeSubmit = '1';
         HTMLFormElement.prototype.submit.call(form);
       });

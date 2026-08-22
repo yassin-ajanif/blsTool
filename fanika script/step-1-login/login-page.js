@@ -28,6 +28,19 @@
     return;
   }
 
+  let loginFirstSaved = false;
+
+  function saveLoginFirstSuccess() {
+    if (loginFirstSaved || !window.fanikaLoginTimes) return;
+    loginFirstSaved = true;
+    const ts = window.fanikaLoginTimes.saveLoginFirstTime();
+    chrome.runtime.sendMessage({
+      action: 'debugLog',
+      event: 'loginPage.firstSuccess',
+      data: { email: client.email, time: ts }
+    });
+  }
+
   chrome.runtime.sendMessage({
     action: 'debugLog',
     event: 'loginPage.start',
@@ -50,6 +63,8 @@
     const btn = document.getElementById('btnVerify');
     if (!btn) return;
 
+    saveLoginFirstSuccess();
+
     allDone = true;
     clearInterval(intervalId);
     chrome.runtime.sendMessage({
@@ -59,20 +74,19 @@
     });
 
     if (!settings?.submitPages?.loginPage) return;
-    try {
-      localStorage.setItem(
-        'logintime',
-        new Date().toLocaleTimeString('en-US', {
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        })
-      );
-    } catch (_) {}
 
     const delay = settings.submitPages.loginPageMs || 0;
-    const click = () => dom.clickEl(btn);
+    const click = () => {
+      if (window.fanikaLoginTimes) {
+        const ts = window.fanikaLoginTimes.saveLoginSubmitTime();
+        chrome.runtime.sendMessage({
+          action: 'debugLog',
+          event: 'loginPage.submitClick',
+          data: { email: client.email, time: ts }
+        });
+      }
+      dom.clickEl(btn);
+    };
     if (delay && window.startCountdown) window.startCountdown(delay, 'btnVerify', click);
     else click();
   };
@@ -81,6 +95,16 @@
     intervalId = setInterval(fillAndSubmit, 100);
     fillAndSubmit();
   };
+
+  // Login page loaded with form ready — record first success even if auto-submit is off.
+  const firstSuccessInterval = setInterval(() => {
+    const email = dom.visibleInputs('input[type="text"], input[type="email"]')[0];
+    const btn = document.getElementById('btnVerify');
+    if (email && btn) {
+      saveLoginFirstSuccess();
+      clearInterval(firstSuccessInterval);
+    }
+  }, 100);
 
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', start);
