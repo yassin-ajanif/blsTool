@@ -1,7 +1,6 @@
 /**
  * Step 5 — Slot hold on /slotselection.
- * Too Many / empty / no calendar → erase visitorId_current + reload same page.
- * No redirect to NewAppointment.
+ * Too Many / empty → visitorId wipe + reload (max 3×) → New Appointment.
  */
 (function () {
   if (window.__fanikaSlotHoldInstalled) return;
@@ -103,6 +102,12 @@
       (res) => {
         if (chrome.runtime.lastError || !(res?.ok || res?.success || res?.bounced)) {
           recovering = false;
+          return;
+        }
+        if (res.action === 'fallbackNewAppointment') {
+          setOverlay('Reload failed 3× — New Appointment', 'ok');
+        } else if (res.action === 'reloadRetry') {
+          setOverlay('Reload ' + (res.attempt || '?') + '/3 — visitorId cleared…', 'restricted');
         }
       }
     );
@@ -116,6 +121,7 @@
     if (hasRealCalendar()) {
       recovering = false;
       setOverlay('Calendar ready', 'ok');
+      chrome.runtime.sendMessage({ action: 'slotHoldFightSuccess' });
       chrome.runtime.sendMessage({
         action: 'debugLog',
         event: 'slotHold.calendarReady',

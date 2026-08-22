@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fanika BLS",
-  "version": "0.2.21",
-  "description": "Fanika — fight Too Many: clear visitorId_current + reload same page",
+  "version": "0.2.22",
+  "description": "Fanika — fight: visitorId wipe + reload×3 → New Appointment",
   "action": {
     "default_title": "Fanika BLS",
     "default_popup": "popup.html",
@@ -69,6 +69,7 @@
         "step-1-login/login-page.js",
         "step-2-login-captcha/login-captcha-page.js",
         "step-3-appointment-captcha/appointment-captcha-page.js",
+        "step-4-visa-type/visa-type-fight-reset.js",
         "step-5-slot-selection/slot-hold.js"
       ],
       "run_at": "document_idle"

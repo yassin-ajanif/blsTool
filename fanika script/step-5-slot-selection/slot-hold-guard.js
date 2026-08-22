@@ -1,11 +1,11 @@
 /**
  * Background: remember SlotSelection + VisaType URLs.
- * Fight / Too Many on NA · VisaType · slots → erase visitorId_current + reload same page.
- * No redirect to NewAppointment.
+ * VisaType / slots Too Many → visitorId wipe + reload same page (max 3×) → New Appointment.
  */
 (function (global) {
   const HOLD_STORE = 'fanikaSlotHoldByTab';
   const RECOVER_COOLDOWN_MS = 5000;
+  const MAX_RELOAD_ATTEMPTS = 3;
   const RELOAD_HINT_MS = 5000;
   const DEFAULT_NEW_APPOINTMENT =
     'https://www.blsspainmorocco.net/MAR/appointment/newappointment';
@@ -189,6 +189,33 @@
     return map[String(tabId)] || null;
   }
 
+  async function patchHold(tabId, patch) {
+    if (tabId == null) return;
+    const map = await getHoldMap();
+    const key = String(tabId);
+    const prev = map[key] || {};
+    map[key] = { ...prev, ...patch, updatedAt: Date.now() };
+    await setHoldMap(map);
+  }
+
+  async function resetReloadAttempts(tabId) {
+    const hold = await getHold(tabId);
+    if (!hold || !hold.reloadAttempts) return;
+    await patchHold(tabId, {
+      active: hold.active !== false,
+      visaTypeUrl: hold.visaTypeUrl,
+      url: hold.url,
+      reloadAttempts: 0
+    });
+    if (typeof debugLog === 'function') {
+      await debugLog('slotHold.reloadAttempts.reset', { tabId });
+    }
+  }
+
+  function isVisaOrSlotsReloadPage(url) {
+    return isVisaTypeUrl(url) || isSlotSelectionUrl(url);
+  }
+
   async function wipeVisitorIdCookies() {
     const cookies = await chrome.cookies.getAll({});
     let count = 0;
@@ -247,10 +274,11 @@
   }
 
   /**
-   * Fight protocol: erase visitorId_current only, reload same page (no NewAppointment redirect).
+   * VisaType / slots: visitorId wipe + reload up to 3×, then clean New Appointment.
+   * Other fight pages: visitor wipe + same-page reload (no NA fallback).
    */
   async function recoverFightVisitorReload(tabId, fromUrl) {
-    const hold = await getHold(tabId);
+    const hold = (await getHold(tabId)) || {};
     const url = fromUrl || '';
     const forceFlow =
       isFightFlowUrl(url) ||
@@ -271,34 +299,105 @@
     lastRecoverAt.set(tabId, Date.now());
 
     try {
-      const target = samePageReloadUrl(url, hold);
       const wiped = await wipeVisitorIdCookies();
+      const visaOrSlots = isVisaOrSlotsReloadPage(url);
+      const attempts = Number(hold.reloadAttempts) || 0;
+
+      if (visaOrSlots && attempts >= MAX_RELOAD_ATTEMPTS) {
+        const target = newAppointmentUrl(url || hold.visaTypeUrl || hold.url);
+        await patchHold(tabId, {
+          active: hold.active !== false,
+          visaTypeUrl: hold.visaTypeUrl,
+          url: hold.url,
+          reloadAttempts: 0
+        });
+
+        if (typeof debugLog === 'function') {
+          await debugLog('slotHold.recoverFallbackNA', {
+            tabId,
+            fromUrl: url,
+            backTo: target,
+            reloadAttempts: attempts,
+            max: MAX_RELOAD_ATTEMPTS,
+            visitorCookiesWiped: wiped
+          });
+        }
+
+        const navOk = await navigateHold(
+          tabId,
+          target,
+          'Reload failed ' + MAX_RELOAD_ATTEMPTS + '× — New Appointment'
+        );
+        return {
+          ok: navOk,
+          target,
+          visitorCookiesWiped: wiped,
+          action: 'fallbackNewAppointment',
+          attempt: attempts,
+          max: MAX_RELOAD_ATTEMPTS
+        };
+      }
+
+      const target = samePageReloadUrl(url, hold);
+      const nextAttempt = visaOrSlots ? attempts + 1 : attempts;
+
+      if (visaOrSlots) {
+        await patchHold(tabId, {
+          active: true,
+          visaTypeUrl: hold.visaTypeUrl,
+          url: hold.url,
+          reloadAttempts: nextAttempt
+        });
+      }
 
       if (typeof debugLog === 'function') {
         await debugLog('slotHold.recoverVisitorReload', {
           tabId,
           fromUrl: url,
           backTo: target,
+          reloadAttempt: visaOrSlots ? nextAttempt : null,
+          maxReloadAttempts: visaOrSlots ? MAX_RELOAD_ATTEMPTS : null,
           visitorCookiesWiped: wiped,
           wipeAuth: false,
           rotate: false
         });
       }
 
-      const navOk = await navigateHold(
-        tabId,
+      const overlayText = visaOrSlots
+        ? 'Reload ' + nextAttempt + '/' + MAX_RELOAD_ATTEMPTS + ' — visitorId cleared…'
+        : 'Too Many — cleared visitorId_current, reloading…';
+
+      const navOk = await navigateHold(tabId, target, overlayText);
+      return {
+        ok: navOk,
         target,
-        'Too Many — cleared visitorId_current, reloading…'
-      );
-      return { ok: navOk, target, visitorCookiesWiped: wiped };
+        visitorCookiesWiped: wiped,
+        action: visaOrSlots ? 'reloadRetry' : 'visitorReload',
+        attempt: visaOrSlots ? nextAttempt : undefined,
+        max: visaOrSlots ? MAX_RELOAD_ATTEMPTS : undefined
+      };
     } finally {
       recoverInFlight.delete(tabId);
     }
   }
 
-  /** @deprecated — fight recovery is visitor wipe + reload */
+  async function fallbackToNewAppointment(tabId, fromUrl) {
+    const hold = (await getHold(tabId)) || {};
+    const target = newAppointmentUrl(fromUrl || hold.visaTypeUrl || hold.url);
+    await patchHold(tabId, {
+      active: hold.active !== false,
+      visaTypeUrl: hold.visaTypeUrl,
+      url: hold.url,
+      reloadAttempts: 0
+    });
+    const wiped = await wipeVisitorIdCookies();
+    const navOk = await navigateHold(tabId, target, 'New Appointment');
+    return { ok: navOk, target, visitorCookiesWiped: wiped, action: 'fallbackNewAppointment' };
+  }
+
+  /** After 3 reload fails — navigate to clean New Appointment. */
   async function recoverToNewAppointment(tabId, fromUrl) {
-    return recoverFightVisitorReload(tabId, fromUrl);
+    return fallbackToNewAppointment(tabId, fromUrl);
   }
 
   async function bounceToVisaType(tabId, fromUrl) {
@@ -315,6 +414,7 @@
     if (!url || !isBls(url)) return;
 
     if (isCleanNewAppointmentUrl(url)) {
+      await resetReloadAttempts(tabId);
       return;
     }
 
@@ -358,7 +458,8 @@
     if (typeof debugLog === 'function') {
       debugLog('slotHold.guard.installed', {
         reloadHintMs: RELOAD_HINT_MS,
-        protocol: 'visitorWipe+reload'
+        maxReloadAttempts: MAX_RELOAD_ATTEMPTS,
+        protocol: 'visitorWipe+reload×3→NA'
       });
     }
   }
@@ -374,6 +475,7 @@
     recoverFromTooMany,
     recoverToNewAppointment,
     recoverFightVisitorReload,
+    resetReloadAttempts,
     wipeVisitorIdCookies,
     samePageReloadUrl,
     newAppointmentUrl,

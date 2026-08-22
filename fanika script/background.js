@@ -1,6 +1,6 @@
 /**
  * Fanika background
- * Fight / Too Many on NA·VisaType·slots: erase visitorId_current + reload same page.
+ * Fight / Too Many on NA·VisaType·slots: visitorId wipe + reload (max 3×) → New Appointment.
  * Cold Too Many (login/etc.): wipe×3 → rotation wipe → login.
  * Access Denied: rotation wipe immediately.
  */
@@ -391,10 +391,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({
           success: ok,
           bounced: Boolean(res?.ok),
-          action: 'visitorReload',
+          ok: res?.ok,
           ...res
         });
       })
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (action === 'slotHoldFightSuccess') {
+    const tabId = sender?.tab?.id;
+    fanikaSlotHold
+      .resetReloadAttempts(tabId)
+      .then(() => sendResponse({ success: true }))
       .catch((err) => sendResponse({ success: false, error: err.message }));
     return true;
   }
@@ -661,7 +670,7 @@ rotateProxies.start()
   })
   .catch(() => {});
 
-console.log('[fanika] Ready — fight Too Many → visitorId_current wipe+reload; cold → wipe×3→login');
+console.log('[fanika] Ready — fight VisaType/slots: visitorWipe+reload×3→NA; cold → wipe×3→login');
 
 // Best-effort early load: prepares TrueCaptcha creds for content scripts.
 ensureTrueCaptchaFromEnv().catch(() => {});

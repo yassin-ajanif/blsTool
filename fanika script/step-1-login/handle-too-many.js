@@ -1,7 +1,7 @@
 /**
  * Step 1 — Too Many + Access Denied handler
  * Access Denied → rotation wipe (wipe + rotate IP → login) immediately.
- * Fight pages / msg=: visitorId_current wipe + same-page reload.
+ * Fight VisaType / slots: visitorId wipe + reload (max 3×) → New Appointment.
  * Cold Too Many: wipe×3 → rotation wipe → login.
  */
 (function () {
@@ -90,7 +90,16 @@
         }
         console.log('[fanika/step-1-login] recoverVisitorReload:', response);
         if (response?.bounced || response?.success || response?.ok) {
-          setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
+          if (response.action === 'fallbackNewAppointment') {
+            setLocalOverlay('Reload failed 3× — New Appointment', 'ok');
+          } else if (response.action === 'reloadRetry') {
+            setLocalOverlay(
+              'Reload ' + (response.attempt || '?') + '/3 — visitorId cleared…',
+              'ok'
+            );
+          } else {
+            setLocalOverlay('Cleared visitorId_current — reloading…', 'ok');
+          }
         } else if (response?.reason === 'cooldown' || response?.reason === 'inFlight') {
           setLocalOverlay('Reload cooldown — waiting…', 'wipe');
           handled = false;
